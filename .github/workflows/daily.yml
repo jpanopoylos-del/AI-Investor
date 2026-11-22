@@ -1,0 +1,54 @@
+# Runs the engine every weekday after the US market closes,
+# then commits the updated portfolio + dashboard back to the repo.
+name: Daily engine run
+
+on:
+  schedule:
+    - cron: "15 22 * * 1-5"   # 22:15 UTC = 00:15 Athens (US closes 21:00 UTC in winter)
+  workflow_dispatch:           # adds a "Run workflow" button for manual runs
+    inputs:
+      date:
+        description: "Trading day to process (YYYY-MM-DD, blank = today)"
+        required: false
+
+permissions:
+  contents: write              # allow the job to push its results
+
+concurrency:
+  group: engine
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Tests (refuse to trade with a broken engine)
+        run: pytest -q
+
+      - name: Run engine + screen + dashboard
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python -m engine.run --date "${{ github.event.inputs.date }}"
+          else
+            python -m engine.run
+          fi
+
+      - name: Commit results
+        run: |
+          git config user.name  "ai-investor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data docs proposals
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "engine: $(date -u +%F) daily run"
+          git pull --rebase origin main
+          git push
