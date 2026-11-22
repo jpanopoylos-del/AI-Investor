@@ -1,0 +1,6 @@
+{
+  "created_at": "2026-11-22T20:39:11Z",
+  "market_view": "Portfolio not started yet: data/summary.json and data/screen.json do not exist (the engine has not run), so there are no screen numbers for trend, RSI or volatility. Per the playbook, prices/trends must come from the screen, and a local screen attempt could not reach Yahoo, so no idea can be sized or stop-set responsibly. Macro backdrop: US Thanksgiving-shortened week (US closed Thu 26 Nov) with lighter liquidity, and European indices have been choppy on AI-valuation worries. Standing aside today; first ideas once the engine produces its first screen.",
+  "proposals": [],
+  "watchlist": ["ASML.AS", "SAP.DE", "MSFT", "AIR.PA"]
+}
