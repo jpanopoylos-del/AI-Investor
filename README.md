@@ -7,7 +7,7 @@ world ETF. Everything runs in the cloud; you watch it from your phone.
 
 > **Simulation only.** No real money, no broker connection, not financial advice.
 
-**Dashboard:** `https://jpanopoylos-del.github.io/ai-investor/` (after step 3 below)
+**Dashboard:** `https://jpanopoylos-del.github.io/AI-Investor/` (after step 3 below)
 
 ---
 
