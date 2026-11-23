@@ -17,6 +17,7 @@ find at most a few high-quality opportunities, or decide to do nothing.
 | `data/screen.json` | last night's screen: market breadth, `top_momentum`, `oversold_in_uptrend`, `unusual_volume`, `all` |
 | `data/decisions.csv` (last ~20 lines) | which of your past proposals were rejected and why — don't repeat the mistake |
 | `config/rules.yaml` | hard limits the engine enforces |
+| `data/discovered.json` | tickers *you* found earlier outside the universe; the screen now scores them too (`source: "discovered"` in `screen.json`) |
 
 If `summary.json` doesn't exist yet the portfolio hasn't started: you may still propose.
 
@@ -33,6 +34,10 @@ If `summary.json` doesn't exist yet the portfolio hasn't started: you may still 
    You may add a name outside the universe if news justifies it, but it must be a liquid USD (US) or EUR
    (Xetra .DE, Paris .PA, Amsterdam .AS, Milan .MI, Madrid .MC, Brussels .BR, Helsinki .HE, Athens .AT) ticker.
    Never US-domiciled ETFs (SPY, QQQ…) — EU retail investors can't buy them.
+   **Discovery:** any ticker you put in `proposals` or `watchlist` that isn't in the universe is added
+   automatically to `data/discovered.json` by the engine (if it's real and liquid) and screened every night after.
+   So use `watchlist` deliberately: names worth tracking, found through news or research. Names not
+   mentioned again for 60 days drop out. Check `summary.json → discovery_notes` for names that were refused.
 4. **Check each shortlisted name on the web**: latest news, the **next earnings date** (avoid buying within 5 days of
    earnings unless that is the explicit thesis), analyst revisions, sector trend. Cite sources.
 5. **Pick 0–3 ideas** where trend, catalyst and risk/reward all agree. Prefer diversification across sectors/regions

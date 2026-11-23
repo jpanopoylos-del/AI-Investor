@@ -58,14 +58,29 @@ def load_universe(root: Path) -> list[str]:
     return [l.strip() for l in lines if l.strip() and not l.startswith("#")]
 
 
+def screen_symbols(root: Path) -> dict[str, str]:
+    """symbol → source: 'universe' (your list), 'discovered' (found by the AI), 'held'."""
+    out = {s: "universe" for s in load_universe(root)}
+    disc = root / "data" / "discovered.json"
+    if disc.exists():
+        for s in json.loads(disc.read_text()):
+            out.setdefault(s, "discovered")
+    pf = root / "data" / "portfolio.json"
+    if pf.exists():
+        for s in json.loads(pf.read_text()).get("positions", {}):
+            out.setdefault(s, "held")
+    return out
+
+
 def run_screen(root: Path, provider, today: date) -> dict:
-    universe = load_universe(root)
+    sources = screen_symbols(root)
+    universe = list(sources)
     bars = provider.history(universe, today - timedelta(days=400), today)
     rows = []
     for s in universe:
         ind = indicators(bars.get(s))
         if ind:
-            rows.append({"symbol": s, "currency": currency_of(s), **ind})
+            rows.append({"symbol": s, "currency": currency_of(s), "source": sources[s], **ind})
     df = pd.DataFrame(rows)
     if df.empty:
         out = {"as_of": today.isoformat(), "count": 0, "market": {}, "top_momentum": [],

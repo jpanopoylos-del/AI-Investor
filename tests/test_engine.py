@@ -144,3 +144,26 @@ def test_expired_proposal(proj):
     _, _ = run(proj, "2026-11-01")                    # Sunday: skipped, inbox kept
     e, _ = run(proj, "2026-11-09")
     assert e.decisions[0]["reason"].startswith("expired")
+
+
+def test_discovery_adds_liquid_outside_names_and_expires(proj):
+    run(proj, "2026-11-02")
+    doc = {"created_at": "2026-11-03T05:30:00Z", "market_view": "t",
+           "proposals": [{"action": "BUY", "symbol": "NEWCO"}],
+           "watchlist": ["AAPL", "WATCHME.DE", "VOD.L"]}
+    (proj / "proposals" / "inbox" / "2026-11-03.json").write_text(json.dumps(doc))
+    e, _ = run(proj, "2026-11-03")
+    disc = json.loads((proj / "data" / "discovered.json").read_text())
+    assert set(disc) == {"NEWCO", "WATCHME.DE"}         # AAPL is in universe, VOD.L unsupported
+    assert any("VOD.L" in n for n in summary(proj)["discovery_notes"])
+
+    from engine.screen import screen_symbols
+    src = screen_symbols(proj)
+    assert src["WATCHME.DE"] == "discovered" and src["AAPL"] == "universe"
+    assert src.get("NEWCO") in ("discovered",)          # held names stay screened too
+
+    # 61+ days later without mentions: dropped unless held
+    e, _ = run(proj, "2027-01-06")
+    disc = json.loads((proj / "data" / "discovered.json").read_text())
+    assert "WATCHME.DE" not in disc
+    assert "NEWCO" in disc                               # was still held at the open → kept

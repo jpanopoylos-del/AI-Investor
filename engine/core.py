@@ -128,6 +128,8 @@ class Engine:
         self.bars: dict[str, pd.DataFrame] = {}
         self.decisions: list[dict] = []
         self.buys_today = 0
+        self.seen: set[str] = set()
+        self.discovery_log: list[str] = []        # every ticker the AI mentioned (proposals + watchlist)
 
     # ---- logging -------------------------------------------------------
     def log_trade(self, symbol, side, qty, px, ccy, value_eur, fee, reason, pnl=None):
@@ -197,6 +199,8 @@ class Engine:
                                        "reason": f"invalid JSON: {e}", "thesis": ""})
                 files.append(f)
                 continue
+            self.seen.update(str(x).strip().upper() for x in doc.get("watchlist", []) or [])
+            self.seen.update(str(p.get("symbol", "")).strip().upper() for p in doc.get("proposals", []))
             created = parse_utc(doc.get("created_at")) or datetime.combine(
                 date.fromisoformat(f.stem[:10]), time(0, 0), tzinfo=timezone.utc)
             pending = False
@@ -331,6 +335,40 @@ class Engine:
                 if held >= self.rules["max_holding_days"]:
                     self.sell(s, float(b["Close"]), f"time exit ({held} days)")
 
+    # ---- discovery -----------------------------------------------------
+    def update_discovered(self):
+        """Tickers the AI found outside universe.txt are remembered in
+        data/discovered.json so the nightly screen keeps scoring them.
+        Only real, liquid, supported tickers get in; stale ones expire."""
+        from .screen import load_universe
+
+        path = self.data / "discovered.json"
+        disc = json.loads(path.read_text()) if path.exists() else {}
+        universe = set(load_universe(self.root))
+        today = self.today.isoformat()
+        for s in sorted(self.seen - universe - {""}):
+            ok, why = (False, "unsupported exchange/currency") if currency_of(s) not in ("USD", "EUR") \
+                else self.liquid_enough(s)
+            if s in disc:
+                disc[s]["last_seen"] = today
+                disc[s]["times_seen"] += 1
+            elif ok:
+                disc[s] = {"first_seen": today, "last_seen": today, "times_seen": 1}
+            else:
+                self.discovery_log.append(f"{s}: not added ({why})")
+                continue
+        held = set(self.state.positions)
+        limit = self.rules.get("discovery_expiry_days", 60)
+        for s in list(disc):
+            age = (self.today - date.fromisoformat(disc[s]["last_seen"])).days
+            if age > limit and s not in held:
+                del disc[s]
+        cap = self.rules.get("max_discovered", 40)
+        if len(disc) > cap:   # keep the most recently mentioned
+            keep = sorted(disc, key=lambda k: (k in held, disc[k]["last_seen"]), reverse=True)[:cap]
+            disc = {k: disc[k] for k in keep}
+        path.write_text(json.dumps(dict(sorted(disc.items())), indent=2))
+
     # ---- main ----------------------------------------------------------
     def run(self) -> str:
         st, r = self.state, self.rules
@@ -348,7 +386,7 @@ class Engine:
         self.fx = float(fxb["Close"]) if fxb is not None else st.last_fx
 
         props, done_files = self.load_proposals()
-        extra = {p["symbol"] for p in props if p.get("symbol")} - base
+        extra = ({p["symbol"] for p in props if p.get("symbol")} | self.seen) - base
         if extra:
             self.bars.update(self.provider.history(list(extra), start, self.today))
 
@@ -358,6 +396,7 @@ class Engine:
             b_fee = r["fee_flat_eur"]
             st.benchmark_qty = (r["starting_cash_eur"] - b_fee) / float(bench["Open"])
 
+        self.update_discovered()
         self.gap_exits()
         self.process_proposals(props)
         self.intraday_exits()
@@ -425,5 +464,6 @@ class Engine:
             "open_slots": r["max_positions"] - len(st.positions),
             "positions": positions,
             "todays_decisions": self.decisions,
+            "discovery_notes": self.discovery_log,
         }
         (self.data / "summary.json").write_text(json.dumps(summary, indent=2))

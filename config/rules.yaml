@@ -36,3 +36,9 @@ fx_fee_pct: 0.0025            # 0.25% extra on non-EUR (USD) trades
 
 # Benchmark: what €1000 would do if you just bought a world ETF on day 1
 benchmark_symbol: VWCE.DE
+
+# Discovery: tickers the AI mentions outside universe.txt are added to
+# data/discovered.json (if liquid) and screened nightly; dropped after
+# this many days without being mentioned again (unless held).
+discovery_expiry_days: 60
+max_discovered: 40

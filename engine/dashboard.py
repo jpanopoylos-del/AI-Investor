@@ -40,6 +40,8 @@ def build_dashboard(root: Path) -> Path:
         "trades": _csv(root / "data" / "trades.csv")[-60:][::-1],
         "decisions": _csv(root / "data" / "decisions.csv")[-40:][::-1],
         "proposal": _latest_proposal(root),
+        "discovered": json.loads((root / "data" / "discovered.json").read_text())
+        if (root / "data" / "discovered.json").exists() else {},
     }
     html = TEMPLATE.replace("/*__DATA__*/null", json.dumps(data, default=str).replace("</", "<\\/"))
     out = root / "docs" / "index.html"
@@ -123,6 +125,9 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
 
   <h2>Latest AI scan</h2>
   <div class="card" id="scan"></div>
+
+  <h2>Discovered by the AI</h2>
+  <div class="card scroll"><table id="discovered"></table></div>
 
   <h2>Engine decisions</h2>
   <div class="card scroll"><table id="decisions"></table></div>
@@ -213,6 +218,14 @@ else{
     : '<div class="empty">No trades proposed — the agent chose to wait.</div>';
   if(P.watchlist&&P.watchlist.length) h+=`<div class="muted" style="margin-top:8px">Watchlist: ${P.watchlist.map(esc).join(", ")}</div>`;
   el.innerHTML=h;
+})();
+
+// ---------- discovered tickers ----------
+(function(){
+  const e=Object.entries(D.discovered||{});
+  $("discovered").innerHTML = e.length ? '<tr><th>Symbol</th><th>First found</th><th>Last mentioned</th><th class="r">Mentions</th></tr>' +
+    e.sort((a,b)=>b[1].last_seen.localeCompare(a[1].last_seen)).map(([s,v])=>`<tr><td><b>${esc(s)}</b></td><td>${v.first_seen}</td><td>${v.last_seen}</td><td class="r">${v.times_seen}</td></tr>`).join("")
+    : '<tr><td class="empty">None yet — tickers the AI finds outside the universe list appear here and join the nightly screen.</td></tr>';
 })();
 
 // ---------- decisions + trades ----------
