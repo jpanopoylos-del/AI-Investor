@@ -1,6 +1,23 @@
 {
-  "created_at": "2026-11-23T06:29:44Z",
-  "market_view": "Portfolio not started yet: data/summary.json and data/screen.json don't exist because the 'Daily engine run' workflow is scheduled weekdays at 22:15 UTC and the repo was set up Sunday evening, so its first scheduled run is tonight (Mon 23 Nov). Without screen numbers for trend, volatility and liquidity, no idea can be sized or stop-set per the playbook, so standing aside today. Macro: European bourses modestly firmer into a busy week with Nvidia earnings and the Anthropic IPO, and a Thanksgiving-shortened US week (closed Thu 26 Nov).",
-  "proposals": [],
-  "watchlist": ["ASML.AS", "SAP.DE", "MSFT", "AIR.PA"]
+  "created_at": "2026-11-23T06:58:52Z",
+  "market_view": "Defensive regime: breadth is 39.8% above SMA200 (26.8% above SMA50), VWCE.DE and EQQQ.DE are below their SMA200 and the universe's median 20-day return is -5.4%. Wall Street slid into correction on an AI/tech rout and hawkish Fed repricing, with Nvidia earnings, the Anthropic IPO, US inflation data and a Thanksgiving-shortened week ahead. Portfolio is not yet funded (no summary.json), so per the playbook only one small, low-beta buy: a European insurer in an intact uptrend that diversifies away from tech; everything else waits for the selloff to stabilise.",
+  "proposals": [
+    {
+      "action": "BUY",
+      "symbol": "MUV2.DE",
+      "size_pct": 0.10,
+      "stop_loss_pct": 0.07,
+      "take_profit_pct": 0.15,
+      "confidence": 0.55,
+      "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit a defensive regime; next results are not due until late February.",
+      "risks": "A broad risk-off flush that drags all equities, a large Q4 nat-cat or reserve charge, or softening reinsurance pricing at the 1 January renewals. A close back below SMA50 (~EUR 542) would weaken the trend case.",
+      "sources": [
+        "https://www.munichre.com/en/company/media-relations/media-information-and-corporate-news/media-information/2026/quarterly-statement-3-2026.html",
+        "https://www.reinsurancene.ws/munich-re-posts-net-result-of-e5-7bn-for-9m26-as-insurance-revenue-rises/",
+        "https://www.riotimesonline.com/global-economy-briefing-november-23-2026",
+        "https://www.abc.net.au/news/2026-11-23/asx-markets-business-live-news-november-23/107414602"
+      ]
+    }
+  ],
+  "watchlist": ["SAP.DE", "ASML.AS", "MSFT", "AIR.PA", "PG", "ENI.MI"]
 }
