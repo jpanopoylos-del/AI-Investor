@@ -1,0 +1,6 @@
+{
+  "created_at": "2026-11-23T05:09:11Z",
+  "market_view": "Portfolio still not started: data/summary.json and data/screen.json do not exist because the 'Daily engine run' GitHub Action has never run (only Pages builds appear in Actions). Without screen numbers for trend, RSI and volatility, no idea can be sized or stop-set per the playbook, so standing aside again. Macro: European bourses modestly firmer into a busy week with Nvidia earnings and the Anthropic IPO, plus a Thanksgiving-shortened US week (closed Thu 26 Nov).",
+  "proposals": [],
+  "watchlist": ["ASML.AS", "SAP.DE", "MSFT", "AIR.PA"]
+}
