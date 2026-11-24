@@ -1,0 +1,44 @@
+# Refreshes the current price of every held stock (and pending buys) during
+# market hours and rebuilds the dashboard. Display only: it never changes the
+# portfolio books, fills, stops or cash, only data/quotes.json and docs/.
+name: Price refresh
+
+on:
+  schedule:
+    - cron: "10 7-21 * * 1-5"   # hourly 07:10-21:10 UTC on weekdays (Xetra open to US close)
+  workflow_dispatch:             # "Run workflow" button for an on-demand refresh
+
+permissions:
+  contents: write
+
+concurrency:
+  group: engine                  # never overlap with the daily engine run
+  cancel-in-progress: false
+
+jobs:
+  quotes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Refresh quotes + dashboard
+        run: python -m engine.quotes
+
+      - name: Commit results
+        run: |
+          git config user.name  "ai-investor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs
+          if [ -f data/quotes.json ]; then git add data/quotes.json; fi
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "quotes: $(date -u +'%F %H:%M') price refresh"
+          git pull --rebase origin main
+          git push

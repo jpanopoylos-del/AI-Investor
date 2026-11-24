@@ -18,6 +18,7 @@ find at most a few high-quality opportunities, or decide to do nothing.
 | `data/decisions.csv` (last ~20 lines) | which of your past proposals were rejected and why — don't repeat the mistake |
 | `config/rules.yaml` | hard limits the engine enforces |
 | `data/discovered.json` | tickers *you* found earlier outside the universe; the screen now scores them too (`source: "discovered"` in `screen.json`) |
+| `data/quotes.json` | latest intraday price (≈15 min delayed, refreshed hourly on weekdays by the *Price refresh* workflow) for every held position and pending buy: price + UTC time, P&L vs entry, % to stop/target, live portfolio value. Display only; the engine books still use daily closes |
 
 If `summary.json` doesn't exist yet the portfolio hasn't started: you may still propose.
 
@@ -101,6 +102,11 @@ Push to **main** directly (no branch, no PR) — the evening engine run reads `m
 
 Finish with a short summary (this is what the user sees on their phone):
 portfolio value vs benchmark, each proposal in one line, and anything notable about open positions.
+Always include a **current price for every held position** (and pending buy): take it from
+`data/quotes.json` (`price` + `time`, `pnl_pct`, `to_stop_pct`, `to_target_pct`). If a quote is missing,
+`live: false`, or older than the last trading session, try the web for a fresher quote, sanity-check it
+(reject anything >15% from the engine's last close, another listing such as an ADR, or an old date) and say
+plainly when no fresh reliable price was found. Report prices only — never write them into `data/`.
 
 ## Never
 

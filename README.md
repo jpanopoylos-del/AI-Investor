@@ -59,6 +59,7 @@ The dashboard shows both lines from the same €1,000 start.
 | `config/rules.yaml` | Risk rules (position size, stops, fees, circuit breaker) — edit freely |
 | `config/universe.txt` | Tickers the nightly screen scores |
 | `engine/prices.py` | Price data (Yahoo for real, Fake for tests) |
+| `engine/quotes.py` | Current (≈15 min delayed) price of held stocks + pending buys → `data/quotes.json`, display only; run hourly on weekdays by `.github/workflows/quotes.yml` and after every engine run |
 | `engine/core.py` | The broker: validates, fills, fees, stops, accounting |
 | `engine/screen.py` | Technical screen → `data/screen.json` |
 | `engine/dashboard.py` | Builds `docs/index.html` |

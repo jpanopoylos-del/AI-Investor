@@ -19,8 +19,9 @@ def _csv(path: Path) -> list[dict]:
 
 
 def _latest_proposal(root: Path) -> dict | None:
-    files = sorted((root / "proposals" / "processed").glob("*.json")) + \
-            sorted((root / "proposals" / "inbox").glob("*.json"))
+    # inbox first: when a day's file exists in both, max() keeps the first → the newer inbox copy
+    files = sorted((root / "proposals" / "inbox").glob("*.json")) + \
+            sorted((root / "proposals" / "processed").glob("*.json"))
     if not files:
         return None
     f = max(files, key=lambda p: p.name)
@@ -40,6 +41,8 @@ def build_dashboard(root: Path) -> Path:
         "trades": _csv(root / "data" / "trades.csv")[-60:][::-1],
         "decisions": _csv(root / "data" / "decisions.csv")[-40:][::-1],
         "proposal": _latest_proposal(root),
+        "quotes": json.loads((root / "data" / "quotes.json").read_text())
+        if (root / "data" / "quotes.json").exists() else None,
         "discovered": json.loads((root / "data" / "discovered.json").read_text())
         if (root / "data" / "discovered.json").exists() else {},
     }
@@ -126,6 +129,9 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
   <h2>Open positions</h2>
   <div class="card scroll"><table id="positions"></table></div>
 
+  <h2>Pending buys (not filled yet)</h2>
+  <div class="card scroll"><table id="pending"></table></div>
+
   <h2>Latest AI scan</h2>
   <div class="card" id="scan"></div>
 
@@ -138,7 +144,7 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
   <h2>Trade log</h2>
   <div class="card scroll"><table id="trades"></table></div>
 
-  <p class="foot">Simulated paper trading. No real money, no real orders, not financial advice.
+  <p class="foot">"Now" prices are ~15-minute-delayed Yahoo quotes refreshed about hourly on weekdays; the portfolio books use daily closes.<br>Simulated paper trading. No real money, no real orders, not financial advice.
   Fills at the next market open after each proposal, with fees and FX costs included.</p>
 </main>
 <script>
@@ -151,22 +157,31 @@ const shares = p => { let q = p.qty;
   if (q == null) { const t = (D.trades||[]).find(t => t.symbol===p.symbol && t.side==="BUY"); q = t ? Number(t.qty) : null; }
   return q == null ? "–" : Number(q).toLocaleString("en-IE",{maximumFractionDigits:4}); };
 const sign = v => v>0 ? '<span class="up">▲ '+pct(v)+'</span>' : v<0 ? '<span class="down">▼ '+pct(v)+'</span>' : '<span>'+pct(v)+'</span>';
+const when = t => { if(!t) return ""; const d=new Date(t); return isNaN(d) ? t : d.toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}); };
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 const S = D.summary;
 if(!S){ $("tiles").innerHTML='<div class="card empty" style="grid-column:1/-1">No runs yet — the first daily run will fill this page.</div>'; }
 else{
-  $("asof").textContent = "as of " + S.as_of + " · started " + S.start_date;
-  const alpha = S.return_pct - S.benchmark_return_pct;
+  const Q = D.quotes && D.quotes.engine_as_of===S.as_of ? D.quotes : null;
+  const qp = Object.fromEntries(((Q&&Q.positions)||[]).map(p=>[p.symbol,p]));
+  $("asof").textContent = "closes as of " + S.as_of + (Q ? " · prices " + when(Q.updated_at) : "") + " · started " + S.start_date;
+  const QB = Q && Q.benchmark && Q.benchmark.return_pct!=null ? Q.benchmark : null;
+  const myRet = Q ? Q.live_return_pct : S.return_pct, bRet = QB ? QB.return_pct : S.benchmark_return_pct;
+  const alpha = myRet - bRet;
   $("tiles").innerHTML = [
-    ["Portfolio value", eur(S.equity_eur), sign(S.return_pct)],
-    ["Benchmark ("+S.benchmark+")", eur(1000*(1+S.benchmark_return_pct/100)), sign(S.benchmark_return_pct)],
+    Q ? ["Portfolio value (now)", eur(Q.live_equity_eur), sign(Q.live_return_pct)+' <span class="muted">· close '+eur(S.equity_eur,0)+'</span>']
+      : ["Portfolio value", eur(S.equity_eur), sign(S.return_pct)],
+    ["Benchmark ("+S.benchmark+")", eur(1000*(1+bRet/100)), sign(bRet)],
     ["Ahead of benchmark", (alpha>=0?"+":"")+alpha.toFixed(2)+" pts", alpha>=0?'<span class="up">beating it</span>':'<span class="down">trailing it</span>'],
     ["Cash", eur(S.cash_eur), '<span class="muted">'+S.positions.length+(S.positions.length===1?' position · ':' positions · ')+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
   ].map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
   $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
-    S.positions.map(p=>`<tr class="pos"><td><b>${esc(p.symbol)}</b></td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div class="muted">${px(p.last_close,p.currency)}</div></td><td class="r">${eur(p.value_eur)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(p.pnl_pct)}</td><td class="r">${p.stop_price.toFixed(2)}<div class="muted">${p.target_price.toFixed(2)}</div></td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><div class="thesis">${esc(p.thesis)}</div></td></tr>`).join("")
+    S.positions.map(p=>{ const q=qp[p.symbol]; const now=q?q.price:p.last_close, pnl=q?q.pnl_pct:p.pnl_pct, val=q?q.value_eur:p.value_eur;
+      const stamp=q&&q.live?when(q.time)+(q.day_change_pct!=null?' · '+pct(q.day_change_pct)+' today':''):'close '+S.as_of;
+      const dist=q?`<div class="muted">${pct(q.to_stop_pct)} / ${pct(q.to_target_pct)}</div>`:'';
+      return `<tr class="pos"><td><b>${esc(p.symbol)}</b></td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div><b>${px(now,p.currency)}</b></div><div class="muted">${stamp}</div></td><td class="r">${eur(val)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(pnl)}</td><td class="r">${p.stop_price.toFixed(2)} / ${p.target_price.toFixed(2)}${dist}</td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><div class="thesis">${esc(p.thesis)}</div></td></tr>`;}).join("")
     : '<tr><td class="empty">All cash — no open positions.</td></tr>';
 }
 
@@ -210,6 +225,16 @@ else{
   const hide=()=>{xh.style.display="none"; tip.style.display="none";};
   const hit=$("hit"); hit.addEventListener("mousemove",move); hit.addEventListener("touchmove",move,{passive:true}); hit.addEventListener("touchstart",move,{passive:true});
   hit.addEventListener("mouseleave",hide); hit.addEventListener("touchend",()=>setTimeout(hide,1500));
+})();
+
+// ---------- pending buys with current prices ----------
+(function(){
+  const P=(D.quotes&&D.quotes.pending)||[];
+  $("pending").innerHTML = P.length ? '<tr><th>Symbol</th><th class="r">Price now</th><th class="r">Size</th><th class="r">Est. stop / target</th><th>Proposed</th></tr>' +
+    P.map(p=>`<tr><td><b>${esc(p.symbol)}</b></td><td class="r">${p.price!=null?px(p.price,p.currency):"–"}<div class="muted">${p.live?when(p.time):"last close"}</div></td><td class="r">${p.size_pct?Math.round(p.size_pct*100)+"%":"–"}</td><td class="r">${p.est_stop!=null?p.est_stop.toFixed(2):"–"} / ${p.est_target!=null?p.est_target.toFixed(2):"–"}</td><td>${esc(p.proposal_date)}</td></tr>`).join("") +
+    '<tr><td colspan="5" class="muted">Fills at the next market open; the engine sets the real stop/target from the fill price.</td></tr>'
+    : '<tr><td class="empty">'+(D.quotes?'No pending buys.':'Current prices appear after the next price refresh.')+'</td></tr>';
+  if(D.quotes&&D.quotes.notes&&D.quotes.notes.length) $("pending").insertAdjacentHTML("beforeend",`<tr><td colspan="5" class="muted">${D.quotes.notes.map(esc).join("<br>")}</td></tr>`);
 })();
 
 // ---------- latest AI scan ----------

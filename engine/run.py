@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from .core import ROOT, Engine, State, load_rules
 from .dashboard import build_dashboard
 from .prices import get_provider
+from .quotes import refresh_quotes
 from .screen import run_screen
 
 
@@ -73,6 +74,11 @@ def main(argv=None):
     if not a.skip_screen:
         s = run_screen(root, provider, today)
         print(f"screen: {s['count']} instruments scored")
+    try:
+        q = refresh_quotes(root, provider)
+        print(f"quotes: {len(q.get('positions', []))} held, {len(q.get('pending', []))} pending")
+    except Exception as e:          # quotes are display-only; never fail the engine run for them
+        print(f"quotes: skipped ({e})")
     build_dashboard(root)
     print("dashboard: docs/index.html")
 

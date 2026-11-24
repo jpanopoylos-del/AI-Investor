@@ -65,6 +65,30 @@ class YahooProvider:
                 out[s] = _clean(None)
         return out
 
+    def latest(self, symbols: list[str], now=None) -> dict[str, dict]:
+        """Most recent intraday price per symbol: {symbol: {"price", "time" (UTC ISO)}}.
+        Uses 15-minute bars over the last 5 days (Yahoo quotes are ~15 min delayed)."""
+        import yfinance as yf
+
+        out: dict[str, dict] = {}
+        symbols = sorted(set(symbols))
+        if not symbols:
+            return out
+        raw = yf.download(symbols, period="5d", interval="15m", auto_adjust=False,
+                          group_by="ticker", progress=False, threads=True, prepost=False)
+        for s in symbols:
+            try:
+                df = raw[s] if isinstance(raw.columns, pd.MultiIndex) else raw
+                c = df["Close"].dropna()
+            except KeyError:
+                continue
+            if c.empty:
+                continue
+            ts = pd.Timestamp(c.index[-1])
+            ts = ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+            out[s] = {"price": float(c.iloc[-1]), "time": ts.strftime("%Y-%m-%dT%H:%M:%S+00:00")}
+        return out
+
 
 class FakeProvider:
     """Deterministic fake market: same symbol + date → same price, always.
@@ -89,6 +113,21 @@ class FakeProvider:
         volume = rng.integers(200_000, 5_000_000, n)
         return pd.DataFrame({"Open": open_, "High": high, "Low": low,
                              "Close": close, "Volume": volume}, index=[d.date() for d in days])
+
+    def latest(self, symbols, now=None):
+        """Last fake close nudged by a small deterministic move, stamped 'now'."""
+        from datetime import datetime, timezone
+        now = now or datetime.now(timezone.utc)
+        out = {}
+        for s in set(symbols):
+            if s in self.missing:
+                continue
+            df = self._series(s, now.date())
+            seed = int(hashlib.md5((s + now.date().isoformat()).encode()).hexdigest()[:8], 16)
+            move = 1 + ((seed % 200) - 100) / 10000        # within ±1%
+            out[s] = {"price": float(df["Close"].iloc[-1]) * move,
+                      "time": now.strftime("%Y-%m-%dT%H:%M:%S+00:00")}
+        return out
 
     def history(self, symbols, start, end):
         out = {}
