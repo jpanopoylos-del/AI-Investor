@@ -167,3 +167,23 @@ def test_discovery_adds_liquid_outside_names_and_expires(proj):
     disc = json.loads((proj / "data" / "discovered.json").read_text())
     assert "WATCHME.DE" not in disc
     assert "NEWCO" in disc                               # was still held at the open → kept
+
+
+def test_delayed_cron_processes_last_closed_session():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from engine.run import last_completed_session
+    ny = ZoneInfo("America/New_York")
+    # cron delayed to 06:00 UTC Tue (01:00 NY) -> Monday's session
+    assert last_completed_session(datetime(2026, 11, 24, 1, 0, tzinfo=ny)) == date(2026, 11, 23)
+    # normal 22:15 UTC run (17:15 NY) -> same day
+    assert last_completed_session(datetime(2026, 11, 23, 17, 15, tzinfo=ny)) == date(2026, 11, 23)
+    # Monday morning -> previous Friday
+    assert last_completed_session(datetime(2026, 11, 23, 2, 0, tzinfo=ny)) == date(2026, 11, 20)
+
+
+def test_missed_days_are_caught_up(proj):
+    from engine.run import days_to_process
+    run(proj, "2026-11-02")
+    assert days_to_process(proj, date(2026, 11, 9)) == [date(2026, 11, d) for d in (3, 4, 5, 6, 9)]
+    assert days_to_process(proj, date(2026, 11, 2)) == []

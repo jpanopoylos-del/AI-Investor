@@ -24,8 +24,14 @@ If `summary.json` doesn't exist yet the portfolio hasn't started: you may still 
 ## 2. Research procedure
 
 1. **Market regime.** From `screen.json → market`: breadth (% above SMA200) and the index ETFs.
-   - Breadth < 40% or index ETFs below SMA200 → *defensive*: at most 1 new buy, smaller size (≤10%), or none.
-   - Otherwise normal.
+   - Breadth < 40%, **or** both VWCE.DE and SXR8.DE below SMA200 → *defensive*: at most 1 new buy, smaller size (≤10%).
+     EQQQ.DE (Nasdaq) alone below trend is a tech signal, not a regime signal.
+   - Otherwise normal (up to 3 ideas).
+   - While the portfolio is mostly cash, a defensive regime means *smaller and fewer* buys, not *no* buys:
+     if one name clearly passes step 4, propose it.
+   - Proposals that haven't filled yet (not in `summary.json` positions) do **not** use up a slot. If one is
+     still valid, repeat it in today's file (proposals expire after 3 days; the engine ignores a buy for a name
+     already held).
    Then one quick web search for today's macro news (central banks, major data releases, geopolitics).
 2. **Review every open position.** Web-search recent news for each. Propose a `SELL` only with a concrete reason
    (thesis broken, earnings miss, guidance cut, better use of capital). Stops/targets already run automatically —

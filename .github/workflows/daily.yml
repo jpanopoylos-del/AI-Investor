@@ -5,10 +5,11 @@ name: Daily engine run
 on:
   schedule:
     - cron: "15 22 * * 1-5"   # 22:15 UTC = 00:15 Athens (US closes 21:00 UTC in winter)
+    - cron: "40 4 * * 2-6"    # backup 04:40 UTC: catches up if the evening run was delayed/missed (no-op otherwise)
   workflow_dispatch:           # adds a "Run workflow" button for manual runs
     inputs:
       date:
-        description: "Trading day to process (YYYY-MM-DD, blank = today)"
+        description: "Trading day to process (YYYY-MM-DD, blank = catch up to last closed session)"
         required: false
 
 permissions:
