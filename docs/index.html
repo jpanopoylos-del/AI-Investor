@@ -46,6 +46,9 @@ td:first-child{white-space:nowrap}
 .idea{padding:12px 0;border-bottom:1px solid var(--grid)} .idea:last-child{border:0}
 .idea b{font-size:15px}
 .thesis{color:var(--ink2);font-size:13.5px;margin-top:4px}
+td.thesis-row{white-space:normal;padding-top:0}
+td.thesis-row .thesis{position:sticky;left:12px;max-width:min(720px,calc(100vw - 72px))}
+tr.pos td{border-bottom:none}
 .empty{color:var(--ink3);font-size:14px;padding:6px 0}
 details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
 .foot{margin-top:36px;font-size:12px;color:var(--ink3)}
@@ -90,6 +93,10 @@ const D = {"summary": {"as_of": "2026-11-23", "start_date": "2026-11-23", "equit
 const $ = id => document.getElementById(id);
 const eur = (v,d=2) => "€" + Number(v).toLocaleString("en-IE",{minimumFractionDigits:d,maximumFractionDigits:d});
 const pct = v => (v>0?"+":"") + Number(v).toFixed(2) + "%";
+const px = (v,c) => (c==="USD"?"$":"€") + Number(v).toLocaleString("en-IE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const shares = p => { let q = p.qty;
+  if (q == null) { const t = (D.trades||[]).find(t => t.symbol===p.symbol && t.side==="BUY"); q = t ? Number(t.qty) : null; }
+  return q == null ? "–" : Number(q).toLocaleString("en-IE",{maximumFractionDigits:4}); };
 const sign = v => v>0 ? '<span class="up">▲ '+pct(v)+'</span>' : v<0 ? '<span class="down">▼ '+pct(v)+'</span>' : '<span>'+pct(v)+'</span>';
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -105,8 +112,8 @@ else{
     ["Cash", eur(S.cash_eur), '<span class="muted">'+S.positions.length+(S.positions.length===1?' position · ':' positions · ')+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
   ].map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
-  $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
-    S.positions.map(p=>`<tr><td><b>${esc(p.symbol)}</b><div class="thesis">${esc(p.thesis)}</div></td><td class="r">${eur(p.value_eur)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(p.pnl_pct)}</td><td class="r">${p.stop_price.toFixed(2)}<div class="muted">${p.target_price.toFixed(2)}</div></td><td>${p.entry_date}</td></tr>`).join("")
+  $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
+    S.positions.map(p=>`<tr class="pos"><td><b>${esc(p.symbol)}</b></td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div class="muted">${px(p.last_close,p.currency)}</div></td><td class="r">${eur(p.value_eur)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(p.pnl_pct)}</td><td class="r">${p.stop_price.toFixed(2)}<div class="muted">${p.target_price.toFixed(2)}</div></td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><div class="thesis">${esc(p.thesis)}</div></td></tr>`).join("")
     : '<tr><td class="empty">All cash — no open positions.</td></tr>';
 }
 

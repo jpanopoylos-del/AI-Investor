@@ -445,7 +445,7 @@ class Engine:
             val = to_eur(p.qty * p.last_price, p.currency, self.fx)
             positions.append({
                 "symbol": p.symbol, "currency": p.currency, "entry_date": p.entry_date,
-                "entry_price": round(p.entry_price, 4), "last_close": round(p.last_price, 4),
+                "qty": round(p.qty, 6), "entry_price": round(p.entry_price, 4), "last_close": round(p.last_price, 4),
                 "pnl_pct": round((p.last_price / p.entry_price - 1) * 100, 2),
                 "value_eur": round(val, 2), "weight_pct": round(val / equity * 100, 1),
                 "stop_price": round(p.stop_price, 4), "target_price": round(p.target_price, 4),
