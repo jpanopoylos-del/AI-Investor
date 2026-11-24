@@ -1,11 +1,21 @@
 {
-  "created_at": "2026-11-24T05:09:34Z",
-  "market_view": "Still defensive on the latest screen (as_of 2026-11-23, apparently pre-rally data): breadth 39.8% above SMA200, VWCE.DE and EQQQ.DE below SMA200, median 20d return -5.4%. Monday brought a violent relief rally (S&P 500 +4.7%, Nasdaq +6.5%, VIX -26%) after Nvidia reinstated Jensen Huang, but the US 10-year rose to 4.95% and October Fed minutes revived December hike odds; Wednesday's PCE/GDP and a Thanksgiving-thin week follow. Yesterday's single defensive buy (MUV2.DE, 10%) is still pending in the inbox and uses today's one defensive slot, so no new proposals: one-day short-covering rallies in a broken tape need confirmation from breadth before adding risk.",
+  "created_at": "2026-11-24T16:28:13Z",
+  "market_view": "Post-screen update (as_of 2026-11-24): breadth improved to 46.3% above SMA200 (33.3% above SMA50, median 20d -3.1%), but VWCE.DE (-1.1% vs SMA200) and EQQQ.DE (-4.6%) are still below trend, so the regime stays defensive. Monday's Nvidia-led relief rally lifted breadth, yet a 4.95% US 10-year, revived December-hike odds and Wednesday's PCE/GDP in a thin Thanksgiving week argue for waiting. The pending defensive buy MUV2.DE (10%, from 2026-11-23) remains valid (screen: +4.2% 20d, 11.7% above SMA200, no new negative news) and uses the one defensive slot, so no new proposals.",
   "proposals": [],
-  "watchlist": ["SAP.DE", "ASML.AS", "MSFT", "AIR.PA", "PG", "ENI.MI", "BRK-B", "KO"],
+  "watchlist": [
+    "SAP.DE",
+    "ASML.AS",
+    "MSFT",
+    "AIR.PA",
+    "PG",
+    "ENI.MI",
+    "BRK-B",
+    "KO"
+  ],
   "sources": [
     "https://www.riotimesonline.com/global-economy-briefing-november-24-2026/",
     "https://abc.net.au/news/2026-11-24/asx-markets-business-news-live-updates-nov-24-2026/107419524",
-    "https://www.munichre.com/en/company/media-relations/media-information-and-corporate-news/media-information/2026/quarterly-statement-3-2026.html"
+    "https://www.munichre.com/en/company/media-relations/media-information-and-corporate-news/media-information/2026/quarterly-statement-3-2026.html",
+    "https://tradingeconomics.com/united-states/stock-market/news/504530"
   ]
 }
