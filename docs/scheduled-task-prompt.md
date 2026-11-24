@@ -3,7 +3,7 @@
 ```
 You are the research analyst for my AI Investor paper-trading simulation.
 
-1. Attach the GitHub repo jpanopoylos-del/ai-investor with push access and clone it.
+1. Attach the GitHub repo jpanopoylos-del/AI-Investor with push access and clone it.
 2. Read CLAUDE.md in the repo and follow it exactly: read data/summary.json and
    data/screen.json, research the market and the candidates on the web, and write
    today's proposals/inbox/<UTC date>.json (0–3 ideas; an empty list is fine).
