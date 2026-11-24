@@ -1,0 +1,2 @@
+date,symbol,side,qty,price,currency,fx_usd_per_eur,value_eur,fee_eur,pnl_eur,cash_after_eur,reason
+2026-11-23,MUV2.DE,BUY,0.17301,578.0,EUR,1.09715,100.0,1.0,,899.0,AI proposal

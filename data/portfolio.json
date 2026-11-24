@@ -1,0 +1,24 @@
+{
+  "cash_eur": 899.0,
+  "start_date": "2026-11-23",
+  "last_run_date": "2026-11-23",
+  "positions": {
+    "MUV2.DE": {
+      "symbol": "MUV2.DE",
+      "currency": "EUR",
+      "qty": 0.17301038062283736,
+      "entry_price": 578.0,
+      "entry_date": "2026-11-23",
+      "cost_eur": 101.0,
+      "stop_price": 537.54,
+      "target_price": 664.6999999999999,
+      "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit a defensive regime; next results are not due until late February.",
+      "last_price": 582.4000244140625
+    }
+  },
+  "benchmark_qty": 6.24375,
+  "benchmark_last": 165.0399932861328,
+  "peak_equity": 1000,
+  "halted": false,
+  "last_fx": 1.097152829170227
+}
