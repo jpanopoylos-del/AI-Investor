@@ -4,20 +4,6 @@
   "proposals": [
     {
       "action": "BUY",
-      "symbol": "IBE.MC",
-      "size_pct": 0.13,
-      "stop_loss_pct": 0.05,
-      "take_profit_pct": 0.11,
-      "confidence": 0.55,
-      "thesis": "Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn on record investment and raised its 2026 outlook (targets a record year); screen shows a steady leader: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off its 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results not due until late February.",
-      "risks": "Rate-sensitive: a further jump in yields on hawkish Fed/ECB repricing would hit utilities; Spanish regulatory/windfall-tax headlines; a close below SMA50 (~5% lower) would break the trend.",
-      "sources": [
-        "https://www.securities.io/iberdrola-lifts-2026-outlook-as-9m-profit-rises-10-to-5-8-billion/",
-        "https://www.iberdrola.com/sala-comunicacion/noticias/detalle/iberdrola-incrementa-beneficio-neto-10-hasta-5816-m-eur-gracias-inversiones-record-10087-m-eur-9-meses-2026"
-      ]
-    },
-    {
-      "action": "BUY",
       "symbol": "PG",
       "size_pct": 0.12,
       "stop_loss_pct": 0.05,
@@ -32,7 +18,16 @@
       ]
     }
   ],
-  "watchlist": ["SAP.DE", "ASML.AS", "MSFT", "AIR.PA", "ENI.MI", "BRK-B", "COST", "TTE.PA"],
+  "watchlist": [
+    "SAP.DE",
+    "ASML.AS",
+    "MSFT",
+    "AIR.PA",
+    "ENI.MI",
+    "BRK-B",
+    "COST",
+    "TTE.PA"
+  ],
   "sources": [
     "https://finance.yahoo.com/markets/live/stock-market-today-tuesday-november-24-dow-sp-500-nasdaq-chip-stocks-nvidia-140629923.html",
     "https://www.home.saxo/content/articles/macro/market-quick-take---nvidias-ceo-returns-and-wall-street-rebounds---24-november-2026-24112026",

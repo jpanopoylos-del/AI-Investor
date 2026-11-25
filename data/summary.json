@@ -1,40 +1,65 @@
 {
-  "as_of": "2026-11-23",
+  "as_of": "2026-11-24",
   "start_date": "2026-11-23",
-  "equity_eur": 999.76,
-  "cash_eur": 899.0,
-  "free_cash_for_new_buys_eur": 799.02,
-  "return_pct": -0.02,
+  "equity_eur": 999.52,
+  "cash_eur": 767.86,
+  "free_cash_for_new_buys_eur": 667.91,
+  "return_pct": -0.05,
   "benchmark": "VWCE.DE",
-  "benchmark_return_pct": 3.05,
-  "drawdown_from_peak_pct": 0.02,
+  "benchmark_return_pct": 1.14,
+  "drawdown_from_peak_pct": 0.1,
   "buying_halted": false,
-  "open_slots": 4,
+  "open_slots": 3,
   "positions": [
     {
       "symbol": "MUV2.DE",
       "currency": "EUR",
       "entry_date": "2026-11-23",
+      "qty": 0.17301,
       "entry_price": 578.0,
-      "last_close": 582.4,
-      "pnl_pct": 0.76,
-      "value_eur": 100.76,
-      "weight_pct": 10.1,
+      "last_close": 586.8,
+      "pnl_pct": 1.52,
+      "value_eur": 101.52,
+      "weight_pct": 10.2,
       "stop_price": 537.54,
       "target_price": 664.7,
       "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit a defensive regime; next results are not due until late February."
+    },
+    {
+      "symbol": "IBE.MC",
+      "currency": "EUR",
+      "entry_date": "2026-11-25",
+      "qty": 5.710395,
+      "entry_price": 22.79,
+      "last_close": 22.79,
+      "pnl_pct": 0.0,
+      "value_eur": 130.14,
+      "weight_pct": 13.0,
+      "stop_price": 21.6505,
+      "target_price": 25.2969,
+      "thesis": "Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn on record investment and raised its 2026 outlook (targets a record year); screen shows a steady leader: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off its 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results not due until late February."
     }
   ],
   "todays_decisions": [
     {
-      "run_date": "2026-11-23",
-      "proposal_date": "2026-11-23",
+      "run_date": "2026-11-25",
+      "proposal_date": "2026-11-24",
       "action": "BUY",
-      "symbol": "MUV2.DE",
+      "symbol": "IBE.MC",
       "status": "FILLED",
-      "reason": "bought \u20ac100 at open 578.00, stop -7%, target +15%",
-      "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit"
+      "reason": "bought \u20ac130 at open 22.79, stop -5%, target +11%",
+      "thesis": "Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn on record investment and raised its 2026 outlook (targets a record year); screen shows a steady leader: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off its 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results n"
+    },
+    {
+      "run_date": "2026-11-25",
+      "proposal_date": "2026-11-25",
+      "action": "BUY",
+      "symbol": "IBE.MC",
+      "status": "REJECTED",
+      "reason": "already held",
+      "thesis": "Repeat of 2026-11-24 (not yet filled). Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn and targets a record 2026; screen 11-24: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results not until late February."
     }
   ],
-  "discovery_notes": []
+  "discovery_notes": [],
+  "live_update": "2026-11-25 (fills at today's open recorded intraday; closing prices after the nightly run)"
 }
