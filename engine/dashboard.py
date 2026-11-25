@@ -58,7 +58,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Investor — €1,000 paper portfolio</title>
+<title>AI Investor — paper portfolio</title>
 <style>
 :root{
   color-scheme:light;
@@ -112,7 +112,7 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
 <body>
 <main>
   <header>
-    <h1>AI Investor · €1,000 paper portfolio</h1>
+    <h1>AI Investor · <span id="cap">paper</span> portfolio</h1>
     <span class="muted" id="asof"></span>
   </header>
 
@@ -161,6 +161,8 @@ const sign = v => v>0 ? '<span class="up">▲ '+pct(v)+'</span>' : v<0 ? '<span 
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 const S = D.summary, Q = D.quotes;
+const START = (S && S.starting_cash_eur) || 1000;
+document.getElementById("cap").textContent = eur(START,0) + " paper";
 const QP = {}; if(Q) for(const q of Q.positions||[]) QP[q.symbol]=q;
 if(!S){ $("tiles").innerHTML='<div class="card empty" style="grid-column:1/-1">No runs yet — the first daily run will fill this page.</div>'; }
 else{
@@ -169,7 +171,7 @@ else{
   const alpha = ret - bret;
   $("tiles").innerHTML = [
     ["Portfolio value"+(Q?" (live)":""), eur(Q ? Q.live_equity_eur : S.equity_eur), sign(ret)],
-    ["Benchmark ("+S.benchmark+")", eur(Q ? Q.benchmark.value_eur : 1000*(1+bret/100)), sign(bret)],
+    ["Benchmark ("+S.benchmark+")", eur(Q ? Q.benchmark.value_eur : START*(1+bret/100)), sign(bret)],
     ["Ahead of benchmark", (alpha>=0?"+":"")+alpha.toFixed(2)+" pts", alpha>=0?'<span class="up">beating it</span>':'<span class="down">trailing it</span>'],
     ["Cash", eur(S.cash_eur), '<span class="muted">'+S.positions.length+(S.positions.length===1?' position · ':' positions · ')+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
   ].map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
@@ -196,7 +198,7 @@ else{
   $("eqtable").innerHTML = '<tr><th>Date</th><th class="r">Portfolio</th><th class="r">Benchmark</th></tr>' + rows.slice().reverse().map(r=>`<tr><td>${r.d}</td><td class="r">${eur(r.p)}</td><td class="r">${eur(r.b)}</td></tr>`).join("");
   if(rows.length < 2){ host.insertAdjacentHTML("beforeend",'<div class="empty">The chart appears after two trading days.</div>'); return; }
   const W=Math.max(300,host.clientWidth||860), H=W<520?230:300, m={l:48,r:W<520?62:90,t:12,b:26};
-  const vals = rows.flatMap(r=>[r.p,r.b]).concat([1000]);
+  const vals = rows.flatMap(r=>[r.p,r.b]).concat([START]);
   let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*.12||10; lo-=pad; hi+=pad;
   const x=i=>m.l+i*(W-m.l-m.r)/(rows.length-1), y=v=>m.t+(hi-v)*(H-m.t-m.b)/(hi-lo);
   const ticks=[]; const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/4))); const st=[1,2,2.5,5,10].map(k=>k*step).find(s=>(hi-lo)/s<=5);
@@ -207,7 +209,7 @@ else{
   const xl=(W<520?[0,li]:[0,Math.floor(li/2),li]).filter((v,i,a)=>a.indexOf(v)===i);
   host.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Portfolio value versus benchmark over time">
     ${ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text x="${m.l-8}" y="${y(t)+4}" text-anchor="end" font-size="12" fill="var(--ink3)">€${Math.round(t)}</text>`).join("")}
-    <line x1="${m.l}" x2="${W-m.r}" y1="${y(1000)}" y2="${y(1000)}" stroke="var(--ink3)" stroke-dasharray="3 4"/>
+    <line x1="${m.l}" x2="${W-m.r}" y1="${y(START)}" y2="${y(START)}" stroke="var(--ink3)" stroke-dasharray="3 4"/>
     ${xl.map(i=>`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?'start':i===li?'end':'middle'}" font-size="12" fill="var(--ink3)">${rows[i].d}</text>`).join("")}
     <path d="${path('b')}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
     <path d="${path('p')}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>

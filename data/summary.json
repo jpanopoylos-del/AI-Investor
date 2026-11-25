@@ -62,5 +62,6 @@
   ],
   "discovery_notes": [],
   "live_update": "2026-11-25 (fills at today's open recorded intraday; closing prices after the nightly run)",
-  "capital_note": "\u20ac4,000 deposited on 2026-11-25 (starting capital now \u20ac5,000; max 8 positions). Earlier history includes it as idle cash on both sides."
+  "capital_note": "\u20ac4,000 deposited on 2026-11-25 (starting capital now \u20ac5,000; max 8 positions). Earlier history includes it as idle cash on both sides.",
+  "starting_cash_eur": 5000
 }

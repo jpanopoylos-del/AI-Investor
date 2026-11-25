@@ -595,6 +595,7 @@ class Engine:
             "equity_eur": round(equity, 2), "cash_eur": round(st.cash_eur, 2),
             "free_cash_for_new_buys_eur": round(max(free_cash, 0), 2),
             "return_pct": round((equity / start - 1) * 100, 2),
+            "starting_cash_eur": start,
             "benchmark": r["benchmark_symbol"],
             "benchmark_return_pct": round((bench_val / start - 1) * 100, 2),
             "drawdown_from_peak_pct": round(dd * 100, 2),
