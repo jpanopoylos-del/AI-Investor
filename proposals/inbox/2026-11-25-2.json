@@ -30,7 +30,20 @@
       ]
     }
   ],
-  "watchlist": ["EUROB.AT", "GEKTERNA.AT", "OPTIMA.AT", "PPC.AT", "ELPE.AT", "ETE.AT", "ABBV", "KO", "SAP.DE", "ASML.AS", "AIR.PA", "TTE.PA"],
+  "watchlist": [
+    "EUROB.AT",
+    "GEKTERNA.AT",
+    "OPTIMA.AT",
+    "PPC.AT",
+    "ELPE.AT",
+    "ETE.AT",
+    "ABBV",
+    "KO",
+    "SAP.DE",
+    "ASML.AS",
+    "AIR.PA",
+    "TTE.PA"
+  ],
   "sources": [
     "https://cyprus-mail.com/2026/11/02/eurobank-builds-on-its-cyprus-presence-as-group-earnings-climb",
     "https://cyprus-mail.com/2026/10/31/eurobank-revises-dates-for-2026-interim-dividend-payment",
