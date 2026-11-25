@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-11-25T19:58:40Z",
-  "updated_athens": "2026-11-25 21:58",
+  "updated_at": "2026-11-25T23:17:54Z",
+  "updated_athens": "2026-11-26 01:17",
   "note": "Yahoo prices, usually ~15 min delayed. For display only; the engine trades at the official open/close.",
-  "fx_usd_per_eur": 1.0983,
+  "fx_usd_per_eur": 1.09794,
   "cash_eur": 4165.35,
-  "live_equity_eur": 4997.29,
-  "live_return_pct": -0.05,
+  "live_equity_eur": 4996.52,
+  "live_return_pct": -0.07,
   "benchmark": {
     "symbol": "VWCE.DE",
     "price": 159.1999969482422,
@@ -48,17 +48,17 @@
     {
       "symbol": "PG",
       "currency": "USD",
-      "price": 173.52,
-      "time_athens": "2026-11-25 21:55",
+      "price": 173.24,
+      "time_athens": "2026-11-25 22:55",
       "live": true,
       "entry_price": 173.26,
       "entry_date": "2026-11-25",
-      "pnl_pct": 0.15,
-      "value_eur": 600.91,
+      "pnl_pct": -0.01,
+      "value_eur": 600.14,
       "stop_price": 164.597,
       "target_price": 194.0512,
-      "to_stop_pct": -5.14,
-      "to_target_pct": 11.83
+      "to_stop_pct": -4.99,
+      "to_target_pct": 12.01
     }
   ],
   "pending_buys": [
@@ -69,7 +69,7 @@
       "price": 10.2,
       "time_athens": "2026-11-25 17:15",
       "live": true,
-      "market_open": true,
+      "market_open": false,
       "stop_if_filled_now": 9.486,
       "target_if_filled_now": 11.73
     },
@@ -80,7 +80,7 @@
       "price": 26.18,
       "time_athens": "2026-11-25 17:15",
       "live": true,
-      "market_open": true,
+      "market_open": false,
       "stop_if_filled_now": 24.871,
       "target_if_filled_now": 29.0598
     }

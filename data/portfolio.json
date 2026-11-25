@@ -1,7 +1,7 @@
 {
   "cash_eur": 4165.350968858131,
   "start_date": "2026-11-23",
-  "last_run_date": "2026-11-24",
+  "last_run_date": "2026-11-25",
   "positions": {
     "MUV2.DE": {
       "symbol": "MUV2.DE",
@@ -13,7 +13,7 @@
       "stop_price": 537.54,
       "target_price": 664.6999999999999,
       "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit a defensive regime; next results are not due until late February.",
-      "last_price": 586.7999877929688
+      "last_price": 585.7999877929688
     },
     "IBE.MC": {
       "symbol": "IBE.MC",
@@ -25,7 +25,7 @@
       "stop_price": 21.650500869750974,
       "target_price": 25.296901016235353,
       "thesis": "Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn on record investment and raised its 2026 outlook (targets a record year); screen shows a steady leader: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off its 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results not due until late February.",
-      "last_price": 22.790000915527344
+      "last_price": 22.709999084472656
     },
     "PG": {
       "symbol": "PG",
@@ -37,12 +37,12 @@
       "stop_price": 164.59699478149415,
       "target_price": 194.05119384765626,
       "thesis": "P&G's Nov 19 Investor Day laid out a ~USD 10bn productivity/savings plan; Citi raised its target to USD 190 and TD Cowen set USD 180 (vs 169.60 close). Screen: +6.1% 20d, +18% 60d, 12.8% above SMA200, 2% off its 52w high, RSI 61, low 19.1% volatility. Defensive US staple diversifies away from EU financials; next earnings late January.",
-      "last_price": 173.25999450683594
+      "last_price": 173.22999572753906
     }
   },
   "benchmark_qty": 30.938157368229973,
-  "benchmark_last": 161.97999572753906,
+  "benchmark_last": 159.1999969482422,
   "peak_equity": 5000.522489237538,
   "halted": false,
-  "last_fx": 1.090809941291809
+  "last_fx": 1.0979359149932861
 }
