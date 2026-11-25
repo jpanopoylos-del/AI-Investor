@@ -63,6 +63,15 @@ class YahooProvider:
                 out[s] = _clean(df)
             except KeyError:
                 out[s] = _clean(None)
+        # yfinance's threaded download sometimes fails a ticker with "database is locked"
+        # (its sqlite cache); retry the empty ones one by one, without threads.
+        for s in [s for s in symbols if out[s].empty][:30]:
+            try:
+                out[s] = _clean(yf.download(s, start=start.isoformat(), end=(end + timedelta(days=1)).isoformat(),
+                                            auto_adjust=False, progress=False, threads=False,
+                                            multi_level_index=False))
+            except Exception as e:
+                print(f"retry {s} failed: {e}")
         return out
 
     def _intraday_raw(self, symbols: list[str]) -> dict[str, pd.DataFrame]:
