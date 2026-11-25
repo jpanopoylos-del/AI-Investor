@@ -78,15 +78,20 @@ The dashboard shows both lines from the same €1,000 start.
 5. **First run**: repo → *Actions* → *Daily engine run* → **Run workflow**. Green tick ≈ 1–2 min.
    This starts the €1,000 clock, buys the benchmark, and creates the first screen.
 6. **AI scan**: a Claude scheduled task runs every weekday morning (see `docs/scheduled-task-prompt.md`).
-   You get a push notification with its ideas; the dashboard updates after the evening run.
+   You get a push notification with its ideas.
+7. **Live run**: the *Live prices + fills* workflow runs hourly in market hours (09:17–23:17 Athens, plus 16:40).
+   It fills proposals at the official open soon after each exchange opens (EU ≈ 10:17, US ≈ 16:40 Athens),
+   writes `data/quotes.json` with current prices, and refreshes the dashboard. The nightly run (00:15 Athens)
+   still handles intraday stops/targets and the closing valuation.
 
 ## Run it yourself (optional, on your computer)
 
 ```bash
 pip install -r requirements.txt
-pytest -q                                   # 9 tests should pass
+pytest -q                                   # all tests should pass
 python -m engine.run --provider fake --date 2026-11-20   # offline, fake prices
 python -m engine.run                         # real prices (needs internet)
+python -m engine.live --provider fake --now 2026-11-20T08:30:00Z   # live mode, offline
 ```
 
 ## Things to experiment with (learning ideas)

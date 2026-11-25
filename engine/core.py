@@ -8,6 +8,11 @@ Daily cycle (run once per trading day, after the US close):
   3. DAY    – intraday exits: stop-loss hit (Low ≤ stop) or target hit (High ≥ target)
   4. CLOSE  – value everything at the close, update benchmark, save history
 
+Live mode (engine/live.py, hourly during market hours): steps 1–2 run as soon
+as each exchange has opened, so fills show up within the hour instead of after
+midnight. The fill price is the same official open, so results are identical;
+the nightly run then does steps 3–4 for the day.
+
 Why fill at the next OPEN?  The AI writes its ideas in the morning before
 markets open. Filling at that day's open price is what a real order would
 get. Using an earlier price would be cheating ("look-ahead bias").
@@ -19,6 +24,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import yaml
@@ -30,6 +36,18 @@ ROOT = Path(__file__).resolve().parent.parent
 # A proposal created after these UTC times is too late for that day's open
 # and is filled at the NEXT trading day's open instead.
 OPEN_CUTOFF_UTC = {"EUR": time(7, 0), "USD": time(14, 30)}
+
+# Regular session open in exchange-local time (used by live mode). A few minutes'
+# grace so the opening auction price is published before we fill at it.
+MARKET_OPEN = {"EUR": ("Europe/Berlin", time(9, 0)), "USD": ("America/New_York", time(9, 30))}
+OPEN_GRACE = timedelta(minutes=5)
+
+
+def market_open_passed(ccy: str, now: datetime) -> bool:
+    """Has today's session for this currency's exchanges opened (plus grace) at `now`?"""
+    tz, t = MARKET_OPEN.get(ccy, MARKET_OPEN["EUR"])
+    local = now.astimezone(ZoneInfo(tz))
+    return local.weekday() < 5 and local >= datetime.combine(local.date(), t, tzinfo=local.tzinfo) + OPEN_GRACE
 
 
 # ─────────────────────────── data structures ───────────────────────────
@@ -127,9 +145,18 @@ class Engine:
         self.state = State.load(self.data / "portfolio.json", self.rules["starting_cash_eur"])
         self.bars: dict[str, pd.DataFrame] = {}
         self.decisions: list[dict] = []
-        self.buys_today = 0
+        self.buys_today = self._buys_logged_today()   # live mode may already have bought today
         self.seen: set[str] = set()
         self.discovery_log: list[str] = []        # every ticker the AI mentioned (proposals + watchlist)
+
+    def _buys_logged_today(self) -> int:
+        path = self.data / "trades.csv"
+        if not path.exists():
+            return 0
+        with path.open() as f:
+            return sum(1 for r in csv.DictReader(f)
+                       if r.get("date") == self.today.isoformat() and r.get("side") == "BUY"
+                       and r.get("reason") == "AI proposal")
 
     # ---- logging -------------------------------------------------------
     def log_trade(self, symbol, side, qty, px, ccy, value_eur, fee, reason, pnl=None):
@@ -155,6 +182,24 @@ class Engine:
         if df is None or df.empty or self.today not in df.index:
             return None
         return df.loc[self.today]
+
+    def patch_today(self, symbols) -> None:
+        """Yahoo's daily series sometimes has no row for a session yet; rebuild that
+        day's bar from 5-minute data so the engine doesn't mistake it for a holiday."""
+        missing = sorted(s for s in symbols if s and self.bar(s) is None)
+        if not missing or not hasattr(self.provider, "day_bars"):
+            return
+        try:
+            synth = self.provider.day_bars(missing, self.today)
+        except Exception as e:                                   # network hiccup: keep the old behaviour
+            print(f"intraday fallback failed: {e}")
+            return
+        for s, row in synth.items():
+            df = self.bars.get(s)
+            new = pd.DataFrame([row], index=[self.today])[["Open", "High", "Low", "Close", "Volume"]]
+            self.bars[s] = new if df is None or df.empty else pd.concat([df[df.index != self.today], new]).sort_index()
+        if synth:
+            print(f"{self.today}: rebuilt daily bar from intraday data for {', '.join(sorted(synth))}")
 
     def equity_at(self, col: str) -> float:
         total = self.state.cash_eur
@@ -187,7 +232,9 @@ class Engine:
         self.buys_today += 1
 
     # ---- proposals -----------------------------------------------------
-    def load_proposals(self) -> tuple[list[dict], list[Path]]:
+    def load_proposals(self, ready=None) -> tuple[list[dict], list[Path]]:
+        """ready(p, ccy) -> bool: extra condition (live mode: has its market opened?).
+        Proposals that aren't ready stay in the inbox for a later run."""
         inbox = self.root / "proposals" / "inbox"
         props, files = [], []
         for f in sorted(inbox.glob("*.json")):
@@ -213,7 +260,7 @@ class Engine:
                 age = (self.today - created.date()).days
                 if age > self.rules["proposal_max_age_days"]:
                     self.decide(p, "REJECTED", f"expired ({age} days old)")
-                elif not eligible_today(created, self.today, ccy):
+                elif not eligible_today(created, self.today, ccy) or (ready and not ready(p, ccy)):
                     pending = True                      # wait for tomorrow's open
                     p["_wait"] = True
                     continue
@@ -311,6 +358,8 @@ class Engine:
     # ---- exits ---------------------------------------------------------
     def gap_exits(self):
         for s, p in list(self.state.positions.items()):
+            if p.entry_date > self.today.isoformat():
+                continue                       # catch-up of an older day: not held yet
             b = self.bar(s)
             if b is None:
                 continue
@@ -322,6 +371,8 @@ class Engine:
 
     def intraday_exits(self):
         for s, p in list(self.state.positions.items()):
+            if p.entry_date > self.today.isoformat():
+                continue
             b = self.bar(s)
             if b is None:
                 continue
@@ -378,6 +429,7 @@ class Engine:
         start = self.today - timedelta(days=45)
         base = {r["benchmark_symbol"], FX_SYMBOL, *st.positions.keys()}
         self.bars = self.provider.history(list(base), start, self.today)
+        self.patch_today(base)
         bench = self.bar(r["benchmark_symbol"])
         if bench is None:
             # benchmark (Xetra) has no bar → market holiday; proposals stay in the inbox
@@ -389,6 +441,7 @@ class Engine:
         extra = ({p["symbol"] for p in props if p.get("symbol")} | self.seen) - base
         if extra:
             self.bars.update(self.provider.history(list(extra), start, self.today))
+        self.patch_today({p["symbol"] for p in props})
 
         # First ever run: start the clock and buy the benchmark with the same €1000
         if st.start_date is None:
@@ -433,10 +486,95 @@ class Engine:
             f.rename(processed / f.name)
         st.save(self.data / "portfolio.json")
         self.write_summary(equity, invested, bench_val, dd)
+        (self.data / "quotes.json").unlink(missing_ok=True)      # superseded by the closing prices
         return (f"{self.today}: equity €{equity:.2f} | benchmark €{bench_val:.2f} | "
                 f"{len(st.positions)} positions | {len(self.decisions)} decisions")
 
-    def write_summary(self, equity, invested, bench_val, dd):
+    # ---- live mode -----------------------------------------------------
+    def live(self, now: datetime) -> str:
+        """Fill proposals whose market has already opened today, at today's official open.
+        Exits on stops/targets and the closing valuation stay with the nightly run."""
+        st, r = self.state, self.rules
+        if st.start_date is None:
+            return "live: portfolio not started yet (the nightly run starts it)"
+        if st.last_run_date and date.fromisoformat(st.last_run_date) >= self.today:
+            return f"live: {self.today} already closed by the nightly run"
+        start = self.today - timedelta(days=45)
+        base = {r["benchmark_symbol"], FX_SYMBOL, *st.positions.keys()}
+        self.bars = self.provider.history(list(base), start, self.today)
+        self.patch_today(base)
+        # Unprocessed past sessions? Filling today first would mix up the books.
+        last = date.fromisoformat(st.last_run_date)
+        bdf = self.bars.get(r["benchmark_symbol"])
+        have = set(bdf.index) if bdf is not None else set()
+        gap = []
+        d = last + timedelta(days=1)
+        while d < self.today:
+            if d.weekday() < 5:
+                if d in have:
+                    gap.append(d)
+                elif hasattr(self.provider, "day_bars"):
+                    try:
+                        if self.provider.day_bars([r["benchmark_symbol"]], d):
+                            gap.append(d)
+                    except Exception:
+                        pass
+            d += timedelta(days=1)
+        if gap:
+            return f"live: sessions {', '.join(map(str, gap))} not processed yet — fills wait"
+        if self.bar(r["benchmark_symbol"]) is None:
+            return f"live: no session today for {r['benchmark_symbol']} (holiday or not open yet)"
+        fxb = self.bar(FX_SYMBOL)
+        self.fx = float(fxb["Close"]) if fxb is not None else st.last_fx
+
+        # Which symbols do the inbox proposals need? (peek without consuming)
+        want = set()
+        for f in (self.root / "proposals" / "inbox").glob("*.json"):
+            try:
+                want |= {str(p.get("symbol", "")).strip().upper() for p in json.loads(f.read_text()).get("proposals", [])}
+            except (json.JSONDecodeError, AttributeError):
+                pass
+        want -= base | {""}
+        if want:
+            self.bars.update(self.provider.history(sorted(want), start, self.today))
+        self.patch_today(want | set(st.positions))
+
+        def ready(p, ccy):
+            return market_open_passed(ccy, now) and self.bar(p["symbol"]) is not None
+
+        props, done_files = self.load_proposals(ready=ready)
+        cash_before = st.cash_eur
+        # gap exits for positions whose market has opened (same rule as the nightly run)
+        for s, p in list(st.positions.items()):
+            if not market_open_passed(p.currency, now):
+                continue
+            b = self.bar(s)
+            if b is None:
+                continue
+            o = float(b["Open"])
+            if o <= p.stop_price:
+                self.sell(s, o, "stop-loss (gapped down at open)")
+            elif o >= p.target_price:
+                self.sell(s, o, "take-profit (gapped up at open)")
+        self.process_proposals(props)
+        for d in self.decisions:
+            append_csv(self.data / "decisions.csv", d)
+        processed = self.root / "proposals" / "processed"
+        processed.mkdir(parents=True, exist_ok=True)
+        for f in done_files:
+            f.rename(processed / f.name)
+        st.save(self.data / "portfolio.json")
+        if self.decisions or abs(st.cash_eur - cash_before) > 1e-9 or done_files:
+            invested = sum(to_eur(p.qty * p.last_price, p.currency, self.fx) for p in st.positions.values())
+            equity = st.cash_eur + invested
+            bench_val = st.benchmark_qty * st.benchmark_last
+            dd = 1 - equity / st.peak_equity if st.peak_equity else 0.0
+            self.write_summary(equity, invested, bench_val, dd, as_of=st.last_run_date)
+        filled = [d["symbol"] for d in self.decisions if d["status"] == "FILLED"]
+        return (f"live {now:%H:%M}Z: {len(self.decisions)} decisions"
+                + (f", filled {', '.join(filled)}" if filled else ""))
+
+    def write_summary(self, equity, invested, bench_val, dd, as_of: str | None = None):
         """A compact snapshot the AI reads every morning before proposing."""
         st, r = self.state, self.rules
         start = r["starting_cash_eur"]
@@ -453,7 +591,7 @@ class Engine:
             })
         free_cash = st.cash_eur - r["min_cash_pct"] * equity
         summary = {
-            "as_of": self.today.isoformat(), "start_date": st.start_date,
+            "as_of": as_of or self.today.isoformat(), "start_date": st.start_date,
             "equity_eur": round(equity, 2), "cash_eur": round(st.cash_eur, 2),
             "free_cash_for_new_buys_eur": round(max(free_cash, 0), 2),
             "return_pct": round((equity / start - 1) * 100, 2),
@@ -463,7 +601,16 @@ class Engine:
             "buying_halted": st.halted,
             "open_slots": r["max_positions"] - len(st.positions),
             "positions": positions,
-            "todays_decisions": self.decisions,
+            "todays_decisions": self._decisions_logged_today() or self.decisions,
             "discovery_notes": self.discovery_log,
         }
+        if as_of:
+            summary["live_update"] = f"{self.today} (fills at today's open recorded intraday; closing prices after the nightly run)"
         (self.data / "summary.json").write_text(json.dumps(summary, indent=2))
+
+    def _decisions_logged_today(self) -> list[dict]:
+        path = self.data / "decisions.csv"
+        if not path.exists():
+            return []
+        with path.open() as f:
+            return [r for r in csv.DictReader(f) if r.get("run_date") == self.today.isoformat()]

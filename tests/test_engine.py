@@ -187,3 +187,77 @@ def test_missed_days_are_caught_up(proj):
     run(proj, "2026-11-02")
     assert days_to_process(proj, date(2026, 11, 9)) == [date(2026, 11, d) for d in (3, 4, 5, 6, 9)]
     assert days_to_process(proj, date(2026, 11, 2)) == []
+
+
+# ─────────────── live mode (hourly fills at the open + quotes) ───────────────
+def live(root, now_iso, provider=None):
+    from datetime import datetime
+    now = datetime.fromisoformat(now_iso.replace("Z", "+00:00"))
+    prov = provider or FakeProvider(quote_day=now.date())
+    e = Engine(root, prov, now.date())
+    return e, e.live(now)
+
+
+def test_live_fills_each_market_after_its_open_and_nightly_does_not_double_buy(proj):
+    run(proj, "2026-11-02")
+    propose(proj, "2026-11-03", [{"action": "BUY", "symbol": "SAP.DE", "size_pct": 0.15},
+                                 {"action": "BUY", "symbol": "MSFT", "size_pct": 0.15}])
+    e, msg = live(proj, "2026-11-03T07:30:00Z")              # 08:30 Berlin: nothing open yet
+    assert not e.state.positions and "0 decisions" in msg
+    e, msg = live(proj, "2026-11-03T08:20:00Z")              # Xetra open, NY not
+    assert set(e.state.positions) == {"SAP.DE"}
+    assert e.state.positions["SAP.DE"].entry_price == pytest.approx(float(e.bars["SAP.DE"].loc[date(2026, 11, 3)]["Open"]))
+    assert (proj / "proposals" / "inbox" / "2026-11-03.json").exists()     # MSFT still waiting
+    assert summary(proj)["as_of"] == "2026-11-02"                          # books not closed yet
+    e, msg = live(proj, "2026-11-03T15:00:00Z")              # NY open
+    assert set(e.state.positions) == {"SAP.DE", "MSFT"}
+    assert not (proj / "proposals" / "inbox" / "2026-11-03.json").exists()
+    e, _ = run(proj, "2026-11-03")                           # nightly: close the day
+    assert set(e.state.positions) == {"SAP.DE", "MSFT"}
+    buys = [l for l in (proj / "data" / "trades.csv").read_text().splitlines() if ",BUY," in l]
+    assert len(buys) == 2
+    s = summary(proj)
+    assert s["as_of"] == "2026-11-03" and len(s["todays_decisions"]) == 2
+
+
+def test_live_respects_daily_buy_cap_across_runs(proj):
+    run(proj, "2026-11-02")
+    propose(proj, "2026-11-03", [{"action": "BUY", "symbol": "SAP.DE", "size_pct": 0.1},
+                                 {"action": "BUY", "symbol": "ASML.AS", "size_pct": 0.1}])
+    live(proj, "2026-11-03T08:20:00Z")
+    propose(proj, "2026-11-02", [{"action": "BUY", "symbol": "AAPL", "size_pct": 0.1}])  # older file, US
+    e, _ = live(proj, "2026-11-03T15:00:00Z")
+    assert "AAPL" not in e.state.positions
+    assert any("max new buys" in d["reason"] for d in e.decisions)
+
+
+def test_live_waits_when_a_past_session_is_unprocessed(proj):
+    run(proj, "2026-11-02")
+    propose(proj, "2026-11-04", [{"action": "BUY", "symbol": "SAP.DE"}])
+    e, msg = live(proj, "2026-11-04T09:00:00Z")              # 11-03 never processed
+    assert "not processed" in msg and not e.state.positions
+
+
+def test_missing_daily_bar_is_rebuilt_from_intraday(proj):
+    lag = FakeProvider(lagging={"VWCE.DE", FX_SYMBOL})
+    run(proj, "2026-11-02", lag)
+    e, msg = run(proj, "2026-11-03", lag)                    # daily series lacks 11-03
+    assert "skipped" not in msg and e.state.last_run_date == "2026-11-03"
+
+
+def test_quotes_file(proj):
+    from datetime import datetime, timezone
+    from engine.live import write_quotes
+    run(proj, "2026-11-02")
+    propose(proj, "2026-11-03", [{"action": "BUY", "symbol": "SAP.DE", "size_pct": 0.15},
+                                 {"action": "BUY", "symbol": "MSFT", "stop_loss_pct": 0.05}])
+    live(proj, "2026-11-03T08:20:00Z")
+    now = datetime(2026, 11, 3, 9, 0, tzinfo=timezone.utc)
+    q = write_quotes(proj, FakeProvider(quote_day=now.date()), now)
+    assert [p["symbol"] for p in q["positions"]] == ["SAP.DE"]
+    assert [p["symbol"] for p in q["pending_buys"]] == ["MSFT"]
+    pos = q["positions"][0]
+    assert pos["to_stop_pct"] < 0 < pos["to_target_pct"]
+    assert q["pending_buys"][0]["stop_if_filled_now"] == pytest.approx(q["pending_buys"][0]["price"] * 0.95, rel=1e-3)
+    assert q["updated_athens"] == "2026-11-03 11:00"
+    assert q["live_equity_eur"] == pytest.approx(q["cash_eur"] + pos["value_eur"], abs=0.02)

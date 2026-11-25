@@ -65,14 +65,64 @@ class YahooProvider:
                 out[s] = _clean(None)
         return out
 
+    def _intraday_raw(self, symbols: list[str]) -> dict[str, pd.DataFrame]:
+        """5-minute bars of the last few days, index = tz-aware timestamps (exchange time)."""
+        import yfinance as yf
+
+        out: dict[str, pd.DataFrame] = {}
+        symbols = sorted(set(symbols))
+        if not symbols:
+            return out
+        raw = yf.download(symbols, period="5d", interval="5m", auto_adjust=False,
+                          group_by="ticker", progress=False, threads=True, prepost=False)
+        for s in symbols:
+            try:
+                df = raw[s] if isinstance(raw.columns, pd.MultiIndex) else raw
+                df = df[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Open", "Close"])
+            except (KeyError, TypeError):
+                df = pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"])
+            out[s] = df
+        return out
+
+    def day_bars(self, symbols: list[str], day: date) -> dict[str, pd.Series]:
+        """Build `day`'s daily bar (Open/High/Low/Close/Volume) from 5-minute bars.
+        Used when Yahoo's daily series has no row for that day yet (it sometimes lags)."""
+        out = {}
+        for s, df in self._intraday_raw(symbols).items():
+            if df.empty:
+                continue
+            days = pd.Index([ts.date() for ts in df.index])
+            d = df[days == day]
+            if d.empty:
+                continue
+            out[s] = pd.Series({"Open": float(d["Open"].iloc[0]), "High": float(d["High"].max()),
+                                "Low": float(d["Low"].min()), "Close": float(d["Close"].iloc[-1]),
+                                "Volume": float(d["Volume"].sum())})
+        return out
+
+    def quotes(self, symbols: list[str]) -> dict[str, dict]:
+        """Latest traded price per symbol: {"price": float, "time": tz-aware datetime (UTC)}.
+        Yahoo data is usually delayed ~15 minutes."""
+        out = {}
+        for s, df in self._intraday_raw(symbols).items():
+            if df.empty:
+                continue
+            ts = df.index[-1]
+            ts = ts.tz_convert("UTC") if ts.tzinfo else ts.tz_localize("UTC")
+            out[s] = {"price": float(df["Close"].iloc[-1]), "time": ts.to_pydatetime()}
+        return out
+
 
 class FakeProvider:
     """Deterministic fake market: same symbol + date → same price, always.
     Lets us test the whole system without internet."""
 
-    def __init__(self, drift: float = 0.0003, vol: float = 0.02, missing: set[str] | None = None):
+    def __init__(self, drift: float = 0.0003, vol: float = 0.02, missing: set[str] | None = None,
+                 lagging: set[str] | None = None, quote_day: date | None = None):
         self.drift, self.vol = drift, vol
         self.missing = missing or set()
+        self.lagging = lagging or set()     # daily series lacks the last day (like Yahoo sometimes)
+        self.quote_day = quote_day
 
     def _series(self, symbol: str, end: date) -> pd.DataFrame:
         seed = int(hashlib.md5(symbol.encode()).hexdigest()[:8], 16)
@@ -93,11 +143,33 @@ class FakeProvider:
     def history(self, symbols, start, end):
         out = {}
         for s in set(symbols):
-            if s in self.missing:
-                out[s] = _clean(None)
+            if s in self.missing or s in self.lagging:
+                df = self._series(s, end) if s in self.lagging else None
+                out[s] = _clean(None) if df is None else df[(df.index >= start) & (df.index < end)]
                 continue
             df = self._series(s, end)
             out[s] = df[(df.index >= start) & (df.index <= end)]
+        return out
+
+    def day_bars(self, symbols, day):
+        out = {}
+        for s in set(symbols):
+            if s in self.missing:
+                continue
+            df = self._series(s, day)
+            if day in df.index:
+                out[s] = df.loc[day]
+        return out
+
+    def quotes(self, symbols):
+        from datetime import datetime, timezone
+        out = {}
+        for s in set(symbols):
+            if s in self.missing:
+                continue
+            df = self._series(s, self.quote_day or date.today())
+            out[s] = {"price": float(df["Close"].iloc[-1]),
+                      "time": datetime.combine(df.index[-1], datetime.min.time(), tzinfo=timezone.utc)}
         return out
 
 

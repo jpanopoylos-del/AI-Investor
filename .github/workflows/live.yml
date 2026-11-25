@@ -1,0 +1,47 @@
+# Hourly during market hours: fill proposals soon after each exchange opens
+# (at the official open price) and refresh live prices on the dashboard.
+# Times below are UTC; Athens is UTC+2 in winter, UTC+3 in summer.
+name: Live prices + fills
+
+on:
+  schedule:
+    - cron: "17 7-21 * * 1-5"  # every hour 09:17–23:17 Athens (winter): EU fills from the 10:17 run
+    - cron: "40 14 * * 1-5"    # 16:40 Athens (winter): US fills right after the 16:30 open
+  workflow_dispatch:           # "Run workflow" button for a manual refresh
+
+permissions:
+  contents: write
+
+concurrency:
+  group: engine                # never overlaps the nightly engine run
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Tests (refuse to trade with a broken engine)
+        run: pytest -q
+
+      - name: Catch up, fill opened markets, refresh quotes + dashboard
+        run: python -m engine.live
+
+      - name: Commit results
+        run: |
+          git config user.name  "ai-investor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data docs proposals
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "live: $(TZ=Europe/Athens date '+%F %H:%M') Athens"
+          git pull --rebase origin main
+          git push

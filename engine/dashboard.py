@@ -40,6 +40,8 @@ def build_dashboard(root: Path) -> Path:
         "trades": _csv(root / "data" / "trades.csv")[-60:][::-1],
         "decisions": _csv(root / "data" / "decisions.csv")[-40:][::-1],
         "proposal": _latest_proposal(root),
+        "quotes": json.loads((root / "data" / "quotes.json").read_text())
+        if (root / "data" / "quotes.json").exists() else None,
         "discovered": json.loads((root / "data" / "discovered.json").read_text())
         if (root / "data" / "discovered.json").exists() else {},
     }
@@ -126,6 +128,9 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
   <h2>Open positions</h2>
   <div class="card scroll"><table id="positions"></table></div>
 
+  <h2>Pending orders</h2>
+  <div class="card scroll"><table id="pending"></table></div>
+
   <h2>Latest AI scan</h2>
   <div class="card" id="scan"></div>
 
@@ -139,7 +144,9 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
   <div class="card scroll"><table id="trades"></table></div>
 
   <p class="foot">Simulated paper trading. No real money, no real orders, not financial advice.
-  Fills at the next market open after each proposal, with fees and FX costs included.</p>
+  Fills at the next market open after each proposal, with fees and FX costs included.
+  Fills are recorded within the hour after each open; live prices refresh hourly in market hours (Yahoo, ~15 min delayed).
+  Times are Athens time.</p>
 </main>
 <script>
 const D = /*__DATA__*/null;
@@ -153,22 +160,33 @@ const shares = p => { let q = p.qty;
 const sign = v => v>0 ? '<span class="up">▲ '+pct(v)+'</span>' : v<0 ? '<span class="down">▼ '+pct(v)+'</span>' : '<span>'+pct(v)+'</span>';
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-const S = D.summary;
+const S = D.summary, Q = D.quotes;
+const QP = {}; if(Q) for(const q of Q.positions||[]) QP[q.symbol]=q;
 if(!S){ $("tiles").innerHTML='<div class="card empty" style="grid-column:1/-1">No runs yet — the first daily run will fill this page.</div>'; }
 else{
-  $("asof").textContent = "as of " + S.as_of + " · started " + S.start_date;
-  const alpha = S.return_pct - S.benchmark_return_pct;
+  $("asof").textContent = (Q ? "live prices " + Q.updated_athens + " Athens · " : "") + "closed books " + S.as_of + " · started " + S.start_date;
+  const ret = Q ? Q.live_return_pct : S.return_pct, bret = Q ? Q.benchmark.return_pct : S.benchmark_return_pct;
+  const alpha = ret - bret;
   $("tiles").innerHTML = [
-    ["Portfolio value", eur(S.equity_eur), sign(S.return_pct)],
-    ["Benchmark ("+S.benchmark+")", eur(1000*(1+S.benchmark_return_pct/100)), sign(S.benchmark_return_pct)],
+    ["Portfolio value"+(Q?" (live)":""), eur(Q ? Q.live_equity_eur : S.equity_eur), sign(ret)],
+    ["Benchmark ("+S.benchmark+")", eur(Q ? Q.benchmark.value_eur : 1000*(1+bret/100)), sign(bret)],
     ["Ahead of benchmark", (alpha>=0?"+":"")+alpha.toFixed(2)+" pts", alpha>=0?'<span class="up">beating it</span>':'<span class="down">trailing it</span>'],
     ["Cash", eur(S.cash_eur), '<span class="muted">'+S.positions.length+(S.positions.length===1?' position · ':' positions · ')+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
   ].map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
   $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
-    S.positions.map(p=>`<tr class="pos"><td><b>${esc(p.symbol)}</b></td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div class="muted">${px(p.last_close,p.currency)}</div></td><td class="r">${eur(p.value_eur)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(p.pnl_pct)}</td><td class="r">${p.stop_price.toFixed(2)}<div class="muted">${p.target_price.toFixed(2)}</div></td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><div class="thesis">${esc(p.thesis)}</div></td></tr>`).join("")
+    S.positions.map(p=>{const q=QP[p.symbol]; const now=q?q.price:p.last_close, val=q?q.value_eur:p.value_eur, pl=q?q.pnl_pct:p.pnl_pct;
+      return `<tr class="pos"><td><b>${esc(p.symbol)}</b>${q?`<div class="muted">${q.live?"live "+esc(q.time_athens.slice(11)):"last close"}</div>`:""}</td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div class="muted">${px(now,p.currency)}</div></td><td class="r">${eur(val)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(pl)}</td><td class="r">${p.stop_price.toFixed(2)}${q?` <span class="muted">${pct(q.to_stop_pct).replace(/\.\d+/,m=>m.slice(0,2))}</span>`:""}<div class="muted">${p.target_price.toFixed(2)}${q?" "+pct(q.to_target_pct).replace(/\.\d+/,m=>m.slice(0,2)):""}</div></td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><div class="thesis">${esc(p.thesis)}</div></td></tr>`}).join("")
     : '<tr><td class="empty">All cash — no open positions.</td></tr>';
 }
+
+// ---------- pending orders ----------
+(function(){
+  const P = (Q && Q.pending_buys) || [];
+  $("pending").innerHTML = P.length ? '<tr><th>Symbol</th><th class="r">Price now</th><th>Market</th><th class="r">Stop / Target if filled now</th><th>From</th></tr>' +
+    P.map(p=>`<tr><td><span class="pill" style="color:var(--s1)">BUY</span> <b>${esc(p.symbol)}</b></td><td class="r">${p.price==null?"–":px(p.price,p.currency)}<div class="muted">${p.price==null?"no quote":p.live?esc(p.time_athens.slice(11)):"last close"}</div></td><td>${p.market_open?"open — fills next hourly run":p.currency==="USD"?"waits for 16:30 open":"waits for 10:00 open"}</td><td class="r">${p.stop_if_filled_now==null?"–":p.stop_if_filled_now.toFixed(2)}<div class="muted">${p.target_if_filled_now==null?"":p.target_if_filled_now.toFixed(2)}</div></td><td class="muted">${esc(p.proposal_file)}</td></tr>`).join("")
+    : '<tr><td class="empty">No pending orders.</td></tr>';
+})();
 
 // ---------- chart: two lines, crosshair + tooltip ----------
 (function(){
