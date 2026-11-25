@@ -17,6 +17,11 @@ ROOT = Path(__file__).resolve().parent.parent
 @pytest.fixture
 def proj(tmp_path):
     shutil.copytree(ROOT / "config", tmp_path / "config")
+    # tests use a fixed €1,000 / 5-position setup, independent of the live config
+    rules = tmp_path / "config" / "rules.yaml"
+    import re
+    txt = re.sub(r"(?m)^starting_cash_eur:.*$", "starting_cash_eur: 1000", rules.read_text())
+    rules.write_text(re.sub(r"(?m)^max_positions:.*$", "max_positions: 5", txt))
     (tmp_path / "proposals" / "inbox").mkdir(parents=True)
     return tmp_path
 

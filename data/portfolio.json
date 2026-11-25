@@ -1,5 +1,5 @@
 {
-  "cash_eur": 767.8601038062284,
+  "cash_eur": 4767.860103806228,
   "start_date": "2026-11-23",
   "last_run_date": "2026-11-24",
   "positions": {
@@ -28,9 +28,9 @@
       "last_price": 22.790000915527344
     }
   },
-  "benchmark_qty": 6.24375,
+  "benchmark_qty": 30.938157368229973,
   "benchmark_last": 161.97999572753906,
-  "peak_equity": 1000.5224892375378,
+  "peak_equity": 5000.522489237538,
   "halted": false,
   "last_fx": 1.090809941291809
 }

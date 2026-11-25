@@ -4,11 +4,11 @@
 #  Change a number here, commit, and the next run uses it.
 # ─────────────────────────────────────────────────────────────
 
-starting_cash_eur: 1000
+starting_cash_eur: 5000            # €1,000 at start + €4,000 deposited on 2026-11-25
 start_date: null              # set automatically on the first run
 
 # Position sizing
-max_positions: 5              # never hold more than 5 stocks/ETFs at once
+max_positions: 8              # never hold more than 8 stocks/ETFs at once
 max_position_pct: 0.20        # one position ≤ 20% of portfolio value
 min_cash_pct: 0.10            # always keep ≥ 10% in cash
 min_trade_eur: 50             # smaller trades aren't worth the fee

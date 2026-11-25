@@ -1,3 +1,4 @@
 date,symbol,side,qty,price,currency,fx_usd_per_eur,value_eur,fee_eur,pnl_eur,cash_after_eur,reason
 2026-11-23,MUV2.DE,BUY,0.17301,578.0,EUR,1.09715,100.0,1.0,,899.0,AI proposal
 2026-11-25,IBE.MC,BUY,5.710395,22.79,EUR,1.09421,130.14,1.0,,767.86,AI proposal
+2026-11-25,CASH,DEPOSIT,4000.0,1,EUR,1.09081,4000.0,0,,4767.86,"capital added: balance raised to €5,000 (benchmark buys the same €4,000)"
