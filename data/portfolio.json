@@ -1,7 +1,7 @@
 {
   "cash_eur": 2964.5424408369836,
   "start_date": "2026-11-23",
-  "last_run_date": "2026-11-25",
+  "last_run_date": "2026-11-26",
   "positions": {
     "MUV2.DE": {
       "symbol": "MUV2.DE",
@@ -13,7 +13,7 @@
       "stop_price": 537.54,
       "target_price": 664.6999999999999,
       "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit a defensive regime; next results are not due until late February.",
-      "last_price": 585.7999877929688
+      "last_price": 589.2000122070312
     },
     "IBE.MC": {
       "symbol": "IBE.MC",
@@ -25,7 +25,7 @@
       "stop_price": 21.650500869750974,
       "target_price": 25.296901016235353,
       "thesis": "Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn on record investment and raised its 2026 outlook (targets a record year); screen shows a steady leader: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off its 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results not due until late February.",
-      "last_price": 22.709999084472656
+      "last_price": 22.979999542236328
     },
     "PG": {
       "symbol": "PG",
@@ -49,7 +49,7 @@
       "stop_price": 9.671999645233154,
       "target_price": 11.959999561309813,
       "thesis": "Bank of Cyprus reported 9M-2026 profit of EUR 383m (+9%), RoTE 18.9%, and raised 2026 RoTE guidance to high-teens with a 70% payout plus up to 20% top-up. Screen 11-24: close 10.69, 2.7% off 52w high, +8.0% vs SMA200, above SMA50, RSI 51, volatility 26%, ADV EUR 6.2m. Adds Greek/Cypriot financials; next results with FY in February.",
-      "last_price": 10.399999618530273
+      "last_price": 10.569999694824219
     },
     "BELA.AT": {
       "symbol": "BELA.AT",
@@ -61,12 +61,12 @@
       "stop_price": 25.07999963760376,
       "target_price": 29.303999576568607,
       "thesis": "Jumbo's Jan-Oct 2026 group sales rose 6.7% with October +13% (best month of the year, Greece +9% YTD); the EUR 1.00 special dividend already went ex on 16 Nov, so no distribution drop ahead. Screen 11-24: close 26.84, +9.6% vs SMA200, above SMA50, RSI 46, 6% off 52w high, very low 17% volatility, ADV EUR 8.6m. Defensive consumer name that diversifies away from banks.",
-      "last_price": 26.399999618530273
+      "last_price": 26.760000228881836
     }
   },
   "benchmark_qty": 30.938157368229973,
-  "benchmark_last": 159.1999969482422,
-  "peak_equity": 5000.522489237538,
+  "benchmark_last": 163.5,
+  "peak_equity": 5014.917568345594,
   "halted": false,
-  "last_fx": 1.0979359149932861
+  "last_fx": 1.0973334312438965
 }
