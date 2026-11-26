@@ -107,7 +107,16 @@ td:first-child{white-space:nowrap}
 .thesis{color:var(--ink2);font-size:13.5px;margin-top:4px}
 td.thesis-row{white-space:normal;padding-top:0}
 td.thesis-row .thesis{position:sticky;left:12px;max-width:min(720px,calc(100vw - 72px))}
-tr.pos td{border-bottom:none}
+td.thesis-row details.why{position:sticky;left:12px;max-width:min(720px,calc(100vw - 72px))}
+details.why summary{margin-top:0;display:flex;gap:6px;list-style:none}
+details.why summary::-webkit-details-marker{display:none}
+details.why summary::before{content:"\25B8";flex:none}
+details.why[open] summary::before{content:"\25BE"}
+details.why .prev{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+details.why[open] .prev{display:none}
+details.why[open] summary::after{content:"Hide details"}
+details.why .thesis{position:static;max-width:none}
+tr.pos td{border-bottom:none;white-space:nowrap}
 .empty{color:var(--ink3);font-size:14px;padding:6px 0}
 details summary{cursor:pointer;color:var(--ink2);font-size:13px;margin-top:8px}
 .foot{margin-top:36px;font-size:12px;color:var(--ink3)}
@@ -182,7 +191,7 @@ else{
 
   $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
     S.positions.map(p=>{const q=QP[p.symbol]; const now=q?q.price:p.last_close, val=q?q.value_eur:p.value_eur, pl=q?q.pnl_pct:p.pnl_pct;
-      return `<tr class="pos"><td><b>${esc(p.symbol)}</b>${q?`<div class="muted">${q.live?"live "+esc(q.time_athens.slice(11)):"last close"}</div>`:""}</td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div class="muted">${px(now,p.currency)}</div></td><td class="r">${eur(val)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(pl)}</td><td class="r">${p.stop_price.toFixed(2)}${q?` <span class="muted">${pct(q.to_stop_pct).replace(/\.\d+/,m=>m.slice(0,2))}</span>`:""}<div class="muted">${p.target_price.toFixed(2)}${q?" "+pct(q.to_target_pct).replace(/\.\d+/,m=>m.slice(0,2)):""}</div></td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><div class="thesis">${esc(p.thesis)}</div></td></tr>`}).join("")
+      return `<tr class="pos"><td><b>${esc(p.symbol)}</b>${q?`<div class="muted">${q.live?"live "+esc(q.time_athens.slice(11)):"last close"}</div>`:""}</td><td class="r">${shares(p)}</td><td class="r">${px(p.entry_price,p.currency)}<div class="muted">${px(now,p.currency)}</div></td><td class="r">${eur(val)}<div class="muted">${p.weight_pct}%</div></td><td class="r">${sign(pl)}</td><td class="r">${p.stop_price.toFixed(2)}${q?` <span class="muted">${pct(q.to_stop_pct).replace(/\.\d+/,m=>m.slice(0,2))}</span>`:""}<div class="muted">${p.target_price.toFixed(2)}${q?" "+pct(q.to_target_pct).replace(/\.\d+/,m=>m.slice(0,2)):""}</div></td><td>${p.entry_date}</td></tr><tr><td colspan="7" class="thesis-row"><details class="why"><summary><span class="prev">${esc(p.thesis)}</span></summary><div class="thesis">${esc(p.thesis)}</div></details></td></tr>`}).join("")
     : '<tr><td class="empty">All cash — no open positions.</td></tr>';
 }
 
