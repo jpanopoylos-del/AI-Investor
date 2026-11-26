@@ -37,6 +37,7 @@ def build_dashboard(root: Path) -> Path:
         "summary": json.loads((root / "data" / "summary.json").read_text())
         if (root / "data" / "summary.json").exists() else None,
         "equity": _csv(root / "data" / "equity.csv"),
+        "bench_hist": _csv(root / "data" / "benchmark_history.csv"),
         "trades": _csv(root / "data" / "trades.csv")[-60:][::-1],
         "decisions": _csv(root / "data" / "decisions.csv")[-40:][::-1],
         "proposal": _latest_proposal(root),
@@ -86,7 +87,10 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2
 .tile .v{font-size:24px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
 .tile .d{font-size:13px;font-variant-numeric:tabular-nums;margin-top:2px}
 .up{color:var(--good)} .down{color:var(--bad)}
-.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:6px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:6px;align-items:center;flex-wrap:wrap}
+.rng{margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.rng button{font:inherit;font-size:12px;padding:3px 10px;border:0;background:transparent;color:var(--ink2);cursor:pointer}
+.rng button.on{background:var(--ink);color:var(--surface)}
 .sw{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
 #chart{position:relative}
 #chart svg{display:block;width:100%;height:auto;overflow:visible}
@@ -190,46 +194,69 @@ else{
     : '<tr><td class="empty">No pending orders.</td></tr>';
 })();
 
-// ---------- chart: two lines, crosshair + tooltip ----------
+// ---------- chart: two lines, crosshair + tooltip, 1M / 3M range ----------
 (function(){
-  const rows = D.equity.map(r=>({d:r.date, p:+r.equity_eur, b:+r.benchmark_eur}));
+  const eq = D.equity.map(r=>({d:r.date, p:+r.equity_eur, b:+r.benchmark_eur}));
   const host = $("chart");
-  $("legend").innerHTML = '<span><i class="sw" style="background:var(--s1)"></i>AI portfolio</span><span><i class="sw" style="background:var(--s2)"></i>Benchmark</span>';
-  $("eqtable").innerHTML = '<tr><th>Date</th><th class="r">Portfolio</th><th class="r">Benchmark</th></tr>' + rows.slice().reverse().map(r=>`<tr><td>${r.d}</td><td class="r">${eur(r.p)}</td><td class="r">${eur(r.b)}</td></tr>`).join("");
-  if(rows.length < 2){ host.insertAdjacentHTML("beforeend",'<div class="empty">The chart appears after two trading days.</div>'); return; }
-  const W=Math.max(300,host.clientWidth||860), H=W<520?230:300, m={l:48,r:W<520?62:90,t:12,b:26};
-  const vals = rows.flatMap(r=>[r.p,r.b]).concat([START]);
-  let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*.12||10; lo-=pad; hi+=pad;
-  const x=i=>m.l+i*(W-m.l-m.r)/(rows.length-1), y=v=>m.t+(hi-v)*(H-m.t-m.b)/(hi-lo);
-  const ticks=[]; const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/4))); const st=[1,2,2.5,5,10].map(k=>k*step).find(s=>(hi-lo)/s<=5);
-  for(let v=Math.ceil(lo/st)*st; v<=hi; v+=st) ticks.push(v);
-  const path=k=>rows.map((r,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(r[k]).toFixed(1)).join("");
-  const last=rows[rows.length-1], li=rows.length-1;
-  let ly1=y(last.p), ly2=y(last.b); if(Math.abs(ly1-ly2)<16){const mid=(ly1+ly2)/2, s=ly1<ly2?-1:1; ly1=mid+s*8; ly2=mid-s*8;}
-  const xl=(W<520?[0,li]:[0,Math.floor(li/2),li]).filter((v,i,a)=>a.indexOf(v)===i);
-  host.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Portfolio value versus benchmark over time">
-    ${ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text x="${m.l-8}" y="${y(t)+4}" text-anchor="end" font-size="12" fill="var(--ink3)">€${Math.round(t)}</text>`).join("")}
-    <line x1="${m.l}" x2="${W-m.r}" y1="${y(START)}" y2="${y(START)}" stroke="var(--ink3)" stroke-dasharray="3 4"/>
-    ${xl.map(i=>`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?'start':i===li?'end':'middle'}" font-size="12" fill="var(--ink3)">${rows[i].d}</text>`).join("")}
-    <path d="${path('b')}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
-    <path d="${path('p')}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>
-    <circle cx="${x(li)}" cy="${y(last.p)}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>
-    <circle cx="${x(li)}" cy="${y(last.b)}" r="4" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/>
-    <text x="${x(li)+10}" y="${ly1+4}" font-size="12" fill="var(--ink)" font-weight="600">${eur(last.p,0)}</text>
-    <text x="${x(li)+10}" y="${ly2+4}" font-size="12" fill="var(--ink2)">${eur(last.b,0)}</text>
-    <g id="xh" style="display:none"><line id="xhl" y1="${m.t}" y2="${H-m.b}" stroke="var(--ink3)"/><circle id="xh1" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/><circle id="xh2" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g>
-    <rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="hit"/>
-  </svg>`);
-  const svg=host.querySelector("svg"), tip=$("tip"), xh=$("xh");
-  const move=ev=>{const pt=(ev.touches?ev.touches[0]:ev); const b=svg.getBoundingClientRect(); const sx=(pt.clientX-b.left)*W/b.width;
-    const i=Math.max(0,Math.min(li,Math.round((sx-m.l)/((W-m.l-m.r)/li)))); const r=rows[i];
-    xh.style.display=""; $("xhl").setAttribute("x1",x(i)); $("xhl").setAttribute("x2",x(i));
-    $("xh1").setAttribute("cx",x(i)); $("xh1").setAttribute("cy",y(r.p)); $("xh2").setAttribute("cx",x(i)); $("xh2").setAttribute("cy",y(r.b));
-    tip.style.display="block"; tip.innerHTML=`<b>${r.d}</b><br><i class="sw" style="background:var(--s1)"></i>AI ${eur(r.p)}<br><i class="sw" style="background:var(--s2)"></i>Benchmark ${eur(r.b)}`;
-    const px=x(i)*b.width/W; tip.style.left=Math.min(Math.max(px-70,0),b.width-160)+"px"; tip.style.top="8px";};
-  const hide=()=>{xh.style.display="none"; tip.style.display="none";};
-  const hit=$("hit"); hit.addEventListener("mousemove",move); hit.addEventListener("touchmove",move,{passive:true}); hit.addEventListener("touchstart",move,{passive:true});
-  hit.addEventListener("mouseleave",hide); hit.addEventListener("touchend",()=>setTimeout(hide,1500));
+  $("legend").innerHTML = '<span><i class="sw" style="background:var(--s1)"></i>AI portfolio</span><span><i class="sw" style="background:var(--s2)"></i>Benchmark</span>'
+    + '<span class="rng" id="rng"><button data-r="30" class="on">1M</button><button data-r="92">3M</button></span>';
+  $("eqtable").innerHTML = '<tr><th>Date</th><th class="r">Portfolio</th><th class="r">Benchmark</th></tr>' + eq.slice().reverse().map(r=>`<tr><td>${r.d}</td><td class="r">${eur(r.p)}</td><td class="r">${eur(r.b)}</td></tr>`).join("");
+  // Benchmark history before the start date, scaled so it meets the book's benchmark value on day 1.
+  let all = eq;
+  const bh = (D.bench_hist||[]).map(r=>({d:r.date, c:+r.close})).filter(r=>r.c>0);
+  if(eq.length && bh.length){
+    const ref = bh.filter(r=>r.d<=eq[0].d).pop();
+    if(ref){ const k = eq[0].b/ref.c; all = bh.filter(r=>r.d<eq[0].d).map(r=>({d:r.d, p:null, b:r.c*k})).concat(eq); }
+  }
+  if(all.length < 2){ host.insertAdjacentHTML("beforeend",'<div class="empty">The chart appears after two trading days.</div>'); return; }
+  const startD = eq.length ? eq[0].d : null;
+
+  function draw(days){
+    host.querySelector("svg")?.remove(); $("tip").style.display="none";
+    const lastD = new Date(all[all.length-1].d); const from = new Date(lastD - days*864e5).toISOString().slice(0,10);
+    let rows = all.filter(r=>r.d>=from); if(rows.length<2) rows = all.slice(-2);
+    const W=Math.max(300,host.clientWidth||860), H=W<520?230:300, m={l:48,r:W<520?62:90,t:14,b:26};
+    const vals = rows.flatMap(r=>[r.p,r.b]).filter(v=>v!=null).concat([START]);
+    let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*.12||10; lo-=pad; hi+=pad;
+    const li=rows.length-1;
+    const x=i=>m.l+i*(W-m.l-m.r)/li, y=v=>m.t+(hi-v)*(H-m.t-m.b)/(hi-lo);
+    const ticks=[]; const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/4))); const st=[1,2,2.5,5,10].map(k=>k*step).find(s=>(hi-lo)/s<=5);
+    for(let v=Math.ceil(lo/st)*st; v<=hi; v+=st) ticks.push(v);
+    const path=k=>{let s="",on=false; rows.forEach((r,i)=>{ if(r[k]==null){on=false;return;} s+=(on?"L":"M")+x(i).toFixed(1)+","+y(r[k]).toFixed(1); on=true;}); return s;};
+    const last=rows[li];
+    let ly1=y(last.p??last.b), ly2=y(last.b); if(Math.abs(ly1-ly2)<16){const mid=(ly1+ly2)/2, s=ly1<ly2?-1:1; ly1=mid+s*8; ly2=mid-s*8;}
+    const xl=(W<520?[0,li]:[0,Math.floor(li/2),li]).filter((v,i,a)=>a.indexOf(v)===i);
+    const si = rows.findIndex(r=>r.d===startD);
+    const fmt = d => new Date(d+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+    host.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Portfolio value versus benchmark, last ${days} days">
+      ${ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text x="${m.l-8}" y="${y(t)+4}" text-anchor="end" font-size="12" fill="var(--ink3)">€${Math.round(t)}</text>`).join("")}
+      <line x1="${m.l}" x2="${W-m.r}" y1="${y(START)}" y2="${y(START)}" stroke="var(--ink3)" stroke-dasharray="3 4"/>
+      ${si>0?`<line x1="${x(si)}" x2="${x(si)}" y1="${m.t}" y2="${H-m.b}" stroke="var(--ink3)" stroke-dasharray="2 3"/><text x="${x(si)-4}" y="${m.t+8}" text-anchor="end" font-size="11" fill="var(--ink3)">start ${fmt(startD)}</text>`:""}
+      ${xl.map(i=>`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?'start':i===li?'end':'middle'}" font-size="12" fill="var(--ink3)">${fmt(rows[i].d)}</text>`).join("")}
+      <path d="${path('b')}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
+      <path d="${path('p')}" fill="none" stroke="var(--s1)" stroke-width="2.5" stroke-linejoin="round"/>
+      ${last.p!=null?`<circle cx="${x(li)}" cy="${y(last.p)}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/><text x="${x(li)+10}" y="${ly1+4}" font-size="12" fill="var(--ink)" font-weight="600">${eur(last.p,0)}</text>`:""}
+      <circle cx="${x(li)}" cy="${y(last.b)}" r="4" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/>
+      <text x="${x(li)+10}" y="${ly2+4}" font-size="12" fill="var(--ink2)">${eur(last.b,0)}</text>
+      <g id="xh" style="display:none"><line id="xhl" y1="${m.t}" y2="${H-m.b}" stroke="var(--ink3)"/><circle id="xh1" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/><circle id="xh2" r="5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2"/></g>
+      <rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="hit"/>
+    </svg>`);
+    const svg=host.querySelector("svg"), tip=$("tip"), xh=$("xh");
+    const move=ev=>{const pt=(ev.touches?ev.touches[0]:ev); const b=svg.getBoundingClientRect(); const sx=(pt.clientX-b.left)*W/b.width;
+      const i=Math.max(0,Math.min(li,Math.round((sx-m.l)/((W-m.l-m.r)/li)))); const r=rows[i];
+      xh.style.display=""; $("xhl").setAttribute("x1",x(i)); $("xhl").setAttribute("x2",x(i));
+      $("xh1").style.display = r.p==null?"none":""; if(r.p!=null){$("xh1").setAttribute("cx",x(i)); $("xh1").setAttribute("cy",y(r.p));}
+      $("xh2").setAttribute("cx",x(i)); $("xh2").setAttribute("cy",y(r.b));
+      tip.style.display="block"; tip.innerHTML=`<b>${fmt(r.d)}</b><br><i class="sw" style="background:var(--s1)"></i>AI ${r.p==null?'<span class="muted">not started</span>':eur(r.p)}<br><i class="sw" style="background:var(--s2)"></i>Benchmark ${eur(r.b)}`;
+      const px=x(i)*b.width/W; tip.style.left=Math.min(Math.max(px-70,0),b.width-160)+"px"; tip.style.top="8px";};
+    const hide=()=>{xh.style.display="none"; tip.style.display="none";};
+    const hit=$("hit"); hit.addEventListener("mousemove",move); hit.addEventListener("touchmove",move,{passive:true}); hit.addEventListener("touchstart",move,{passive:true});
+    hit.addEventListener("mouseleave",hide); hit.addEventListener("touchend",()=>setTimeout(hide,1500));
+  }
+  let cur=30; draw(cur);
+  $("rng").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; cur=+b.dataset.r;
+    $("rng").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); draw(cur);});
+  let rt; addEventListener("resize",()=>{clearTimeout(rt); rt=setTimeout(()=>draw(cur),150);});
 })();
 
 // ---------- latest AI scan ----------

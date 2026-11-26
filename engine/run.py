@@ -73,8 +73,30 @@ def main(argv=None):
     if not a.skip_screen:
         s = run_screen(root, provider, today)
         print(f"screen: {s['count']} instruments scored")
+    save_benchmark_history(root, provider, today)
     build_dashboard(root)
     print("dashboard: docs/index.html")
+
+
+def save_benchmark_history(root: Path, provider, today: date, days: int = 100):
+    """Daily closes of the benchmark for the dashboard chart (context before the start date).
+    Display only: the engine never reads this file. Never fails the run."""
+    import csv
+    try:
+        sym = load_rules(root)["benchmark_symbol"]
+        df = provider.history([sym], today - timedelta(days=days), today).get(sym)
+        if df is None or df.empty:
+            print("benchmark history: no data, keeping old file")
+            return
+        out = root / "data" / "benchmark_history.csv"
+        with out.open("w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["date", "close"])
+            for d, c in df["Close"].items():
+                w.writerow([str(d), f"{float(c):.4f}"])
+        print(f"benchmark history: {len(df)} days of {sym}")
+    except Exception as e:  # display-only, must never break the engine run
+        print(f"benchmark history failed: {e}")
 
 
 if __name__ == "__main__":
