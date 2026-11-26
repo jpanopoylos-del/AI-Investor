@@ -29,6 +29,8 @@ drawdown_halt_pct: 0.20
 min_price: 2.0                          # no penny stocks
 min_avg_daily_value: 5000000            # 20-day avg (price × volume), local currency
 proposal_max_age_days: 3                # stale proposals expire
+min_history_sessions: 10                # a BUY needs this many past sessions of prices
+short_history_allowed: [ANT]            # user override (26 Nov 2026): may buy with ≥3 sessions
 
 # Costs — modelled on a typical EU neobroker
 fee_flat_eur: 1.00            # per order

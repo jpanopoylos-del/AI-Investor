@@ -287,7 +287,10 @@ class Engine:
     def liquid_enough(self, symbol: str) -> tuple[bool, str]:
         df = self.bars.get(symbol)
         hist = df[df.index < self.today].tail(20) if df is not None else None
-        if hist is None or len(hist) < 10:
+        need = self.rules.get("min_history_sessions", 10)
+        if symbol in (self.rules.get("short_history_allowed") or []):
+            need = min(need, 3)     # user-approved exception for a young IPO
+        if hist is None or len(hist) < need:
             return False, "not enough price history"
         avg_val = float((hist["Close"] * hist["Volume"]).mean())
         if avg_val < self.rules["min_avg_daily_value"]:

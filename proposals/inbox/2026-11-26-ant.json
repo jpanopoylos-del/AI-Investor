@@ -1,0 +1,24 @@
+{
+  "created_at": "2026-11-26T07:41:05Z",
+  "market_view": "User-requested paper buy of Anthropic (ANT), filed early on 26 Nov with an explicit user override of the 10-session history rule (config short_history_allowed: [ANT], needs >=3 sessions). US markets are closed today for Thanksgiving, so this fills at the Fri 27 Nov open (half-day session). Anthropic makes Claude, so the analyst is not neutral on this name.",
+  "proposals": [
+    {
+      "action": "BUY",
+      "symbol": "ANT",
+      "size_pct": 0.10,
+      "stop_loss_pct": 0.12,
+      "take_profit_pct": 0.30,
+      "confidence": 0.45,
+      "thesis": "Requested by the user, who chose to override the 10-session history rule. Anthropic listed on Nasdaq on 19 Nov 2026 at USD 83 and is one of the most actively traded US stocks; it has given back most of its first-day pop. It is a small, tight-stop position in a leading AI company ahead of possible Nasdaq-100 entry. Analyst initiations are expected when the quiet period ends (~29 Dec). Disclosure: Anthropic makes Claude, so the analyst is not neutral.",
+      "risks": "Very high volatility of a brand-new IPO with only ~5 sessions of prices and no screen data (no SMA, RSI or volatility yet); an AI/tech sell-off; large insider and early-investor lock-up expiries ahead; the first earnings date was not verified; the 2026 IPO class is trading weak on average.",
+      "sources": [
+        "https://kalkine.com/news/artificial-intelligence/why-anthropic-nasdaqant-became-the-second-most-active-us-stock-as-it-gave-back-most-of-its-ipo-pop",
+        "https://admiralmarkets.com/analytics/traders-blog/anthropic-lock-up-expiration-dates-ant-stock",
+        "https://finance.yahoo.com/markets/stocks/articles/anthropic-ipo-billions-shares-waiting-184526789.html",
+        "https://www.benzinga.com/opinion/26/11/63512484/anthropic-stock-the-bull-base-and-bear-case-into-nasdaq-100-entry",
+        "https://www.sec.gov/Archives/edgar/data/0002130357/000162828026068676/anthropicpbc-sx1ax1.htm"
+      ]
+    }
+  ],
+  "watchlist": ["ANT"]
+}
