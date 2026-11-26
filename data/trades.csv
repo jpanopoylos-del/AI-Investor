@@ -3,3 +3,5 @@ date,symbol,side,qty,price,currency,fx_usd_per_eur,value_eur,fee_eur,pnl_eur,cas
 2026-11-25,IBE.MC,BUY,5.710395,22.79,EUR,1.09421,130.14,1.0,,767.86,AI proposal
 2026-11-25,CASH,DEPOSIT,4000.0,1,EUR,1.09081,4000.0,0,,4767.86,"capital added: balance raised to €5,000 (benchmark buys the same €4,000)"
 2026-11-25,PG,BUY,3.803467,173.26,USD,1.0983,600.01,2.5,,4165.35,AI proposal
+2026-11-26,BOCHGR.AT,BUY,57.635027,10.4,EUR,1.09721,599.4,1.0,,3564.95,AI proposal
+2026-11-26,BELA.AT,BUY,22.704707,26.4,EUR,1.09721,599.4,1.0,,2964.54,AI proposal

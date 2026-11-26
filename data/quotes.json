@@ -1,49 +1,49 @@
 {
-  "updated_at": "2026-11-26T02:54:19Z",
-  "updated_athens": "2026-11-26 04:54",
+  "updated_at": "2026-11-26T17:46:37Z",
+  "updated_athens": "2026-11-26 19:46",
   "note": "Yahoo prices, usually ~15 min delayed. For display only; the engine trades at the official open/close.",
-  "fx_usd_per_eur": 1.09697,
-  "cash_eur": 4165.35,
-  "live_equity_eur": 4997.05,
-  "live_return_pct": -0.06,
+  "fx_usd_per_eur": 1.09721,
+  "cash_eur": 2964.54,
+  "live_equity_eur": 5015.02,
+  "live_return_pct": 0.3,
   "benchmark": {
     "symbol": "VWCE.DE",
-    "price": 159.1999969482422,
-    "time_athens": "2026-11-25 18:25",
-    "live": false,
-    "value_eur": 4925.35,
-    "return_pct": -1.49
+    "price": 163.5,
+    "time_athens": "2026-11-26 18:25",
+    "live": true,
+    "value_eur": 5058.39,
+    "return_pct": 1.17
   },
   "positions": [
     {
       "symbol": "MUV2.DE",
       "currency": "EUR",
-      "price": 585.8,
-      "time_athens": "2026-11-25 18:25",
-      "live": false,
+      "price": 589.2,
+      "time_athens": "2026-11-26 18:25",
+      "live": true,
       "entry_price": 578.0,
       "entry_date": "2026-11-23",
-      "pnl_pct": 1.35,
-      "value_eur": 101.35,
+      "pnl_pct": 1.94,
+      "value_eur": 101.94,
       "stop_price": 537.54,
       "target_price": 664.7,
-      "to_stop_pct": -8.24,
-      "to_target_pct": 13.47
+      "to_stop_pct": -8.77,
+      "to_target_pct": 12.81
     },
     {
       "symbol": "IBE.MC",
       "currency": "EUR",
-      "price": 22.71,
-      "time_athens": "2026-11-25 18:25",
-      "live": false,
+      "price": 22.98,
+      "time_athens": "2026-11-26 18:25",
+      "live": true,
       "entry_price": 22.79,
       "entry_date": "2026-11-25",
-      "pnl_pct": -0.35,
-      "value_eur": 129.68,
+      "pnl_pct": 0.83,
+      "value_eur": 131.22,
       "stop_price": 21.6505,
       "target_price": 25.2969,
-      "to_stop_pct": -4.67,
-      "to_target_pct": 11.39
+      "to_stop_pct": -5.79,
+      "to_target_pct": 10.08
     },
     {
       "symbol": "PG",
@@ -54,35 +54,54 @@
       "entry_price": 173.26,
       "entry_date": "2026-11-25",
       "pnl_pct": -0.01,
-      "value_eur": 600.66,
+      "value_eur": 600.53,
       "stop_price": 164.597,
       "target_price": 194.0512,
       "to_stop_pct": -4.99,
       "to_target_pct": 12.01
-    }
-  ],
-  "pending_buys": [
+    },
     {
       "symbol": "BOCHGR.AT",
       "currency": "EUR",
-      "proposal_file": "2026-11-25-2.json",
-      "price": 10.2,
-      "time_athens": "2026-11-25 17:15",
-      "live": false,
-      "market_open": false,
-      "stop_if_filled_now": 9.486,
-      "target_if_filled_now": 11.73
+      "price": 10.57,
+      "time_athens": "2026-11-26 17:10",
+      "live": true,
+      "entry_price": 10.4,
+      "entry_date": "2026-11-26",
+      "pnl_pct": 1.63,
+      "value_eur": 609.2,
+      "stop_price": 9.672,
+      "target_price": 11.96,
+      "to_stop_pct": -8.5,
+      "to_target_pct": 13.15
     },
     {
       "symbol": "BELA.AT",
       "currency": "EUR",
-      "proposal_file": "2026-11-25-2.json",
-      "price": 26.18,
-      "time_athens": "2026-11-25 17:15",
+      "price": 26.76,
+      "time_athens": "2026-11-26 17:15",
+      "live": true,
+      "entry_price": 26.4,
+      "entry_date": "2026-11-26",
+      "pnl_pct": 1.36,
+      "value_eur": 607.58,
+      "stop_price": 25.08,
+      "target_price": 29.304,
+      "to_stop_pct": -6.28,
+      "to_target_pct": 9.51
+    }
+  ],
+  "pending_buys": [
+    {
+      "symbol": "ANT",
+      "currency": "USD",
+      "proposal_file": "2026-11-26-ant.json",
+      "price": 82.7875,
+      "time_athens": "2026-11-25 22:55",
       "live": false,
-      "market_open": false,
-      "stop_if_filled_now": 24.871,
-      "target_if_filled_now": 29.0598
+      "market_open": true,
+      "stop_if_filled_now": 72.853,
+      "target_if_filled_now": 107.6237
     }
   ]
 }
