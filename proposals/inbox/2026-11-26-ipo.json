@@ -1,0 +1,11 @@
+{
+  "created_at": "2026-11-26T06:47:18Z",
+  "market_view": "IPO radar (user request): adding sizeable 2026 US IPOs with >=10 sessions of history to the watchlist so the engine tracks them nightly. The 2026 IPO class is weak (37 of 53 USD 1bn+ deals below IPO price on 19 Nov, median -21.8%), so the focus is on large, liquid listings and those holding above their offer price. Nov 19 closes vs IPO price: SpaceX SPCX 138.43 (+2.5%), Bending Spoons BSP 41.70 (+43.8%), Arxis ARXS 51.52 (+84%), Lincoln International LCLN 27.25 (+36%), Janus Living JAN 31.67 (+58%), Madison Air MAIR 23.19 (-14%), Cerebras CBRS 86.96 (-53%, AI bellwether). ANT (Anthropic) is too young (listed 19 Nov) and has its own user-requested buy task on 4 Dec; Anthropic makes Claude, so the analyst is not neutral on it. No large IPOs are scheduled to price in the coming days. No buys today: US markets are closed for Thanksgiving, and the screen can't score most of these yet.",
+  "proposals": [],
+  "watchlist": ["SPCX", "BSP", "ARXS", "LCLN", "JAN", "MAIR", "CBRS"],
+  "sources": [
+    "https://www.stocktitan.net/articles/biggest-ipos-2026-us-list",
+    "https://dealroom.co/news/173204-the-10-biggest-us-ipos-of-2026-are-down-20-5-on-average-just-as-anthropi/",
+    "https://therighttrader.com/ipo-calendar"
+  ]
+}

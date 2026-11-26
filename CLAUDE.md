@@ -47,8 +47,9 @@ If `summary.json` doesn't exist yet the portfolio hasn't started: you may still 
    automatically to `data/discovered.json` by the engine (if it's real and liquid) and screened every night after.
    So use `watchlist` deliberately: names worth tracking, found through news or research. Names not
    mentioned again for 60 days drop out. Check `summary.json → discovery_notes` for names that were refused.
-   **IPO radar (Mondays, or any day a big listing is in the news):** one web search for IPOs that recently listed
-   or are due in the next ~4 weeks on the supported US/EU exchanges. Keep only sizeable, liquid ones (≈ ≥1bn
+   **IPO radar (every scan — the user explicitly wants IPOs on the watchlist and considered as opportunities):**
+   one web search for IPOs that recently listed or are due in the next ~4 weeks on the supported US/EU exchanges,
+   and treat eligible IPOs as regular shortlist candidates alongside the screen lists. Keep only sizeable, liquid ones (≈ ≥1bn
    market cap). Skip SPACs, penny stocks and other currencies. The engine refuses a buy or a watchlist entry until a stock has
    **≥10 trading sessions** of history, and the screen needs ~130 days, so IPOs never appear in `screen.json`.
    Name upcoming or too-young IPOs in `market_view` with the date they become eligible; once a stock has 10
