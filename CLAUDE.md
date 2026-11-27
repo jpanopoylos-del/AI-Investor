@@ -31,7 +31,7 @@ If `summary.json` doesn't exist yet the portfolio hasn't started: you may still 
      (`vs_sma200` < -2) — and only if that was also true in the previous screen
      (`git show $(git log -n 2 --format=%h -- data/screen.json | tail -1):data/screen.json`). A dip of 0–2% below the
      average is borderline noise, not a regime change (adopted 27 Nov 2026 after a −1.6% dip flipped the regime).
-     Defensive: at most 1 new buy at ≤10% — **but** while cash is above 40% of equity, up to 2 buys at ≤15% each,
+     Defensive: at most 1 new buy at ≤10% — **but** while cash + `parked_eur` is above 40% of equity, up to 2 buys at ≤15% each,
      because idle cash was the main reason the portfolio trailed the benchmark in its first week.
      EQQQ.DE (Nasdaq) alone below trend is a tech signal, not a regime signal.
    - Otherwise normal (up to 3 ideas).
@@ -39,15 +39,11 @@ If `summary.json` doesn't exist yet the portfolio hasn't started: you may still 
      if one name clearly passes step 4, propose it.
    - Don't only pick low-volatility defensives: they lag the benchmark in rebounds. Mix in quality cyclicals/growth
      when their trend is intact, and diversify by sector versus what is held.
-   - **Cash parking in VWCE.DE (user decision, 27 Nov 2026).** Cash above the 10% minimum that today's picks won't use
-     is parked in VWCE.DE (the benchmark fund), so only stock picks decide whether we beat the benchmark.
-     If VWCE.DE isn't held and spare cash after today's picks is ≥ €400, propose `BUY VWCE.DE` with
-     `size_pct` = spare cash / equity (engine caps it at 0.20), `stop_loss_pct` 0.15, `take_profit_pct` 0.30,
-     `confidence` 0.9 (so it never takes a stock pick's place — keep it lower than picks only if the daily buy cap of 2
-     would otherwise drop a pick; then park the next day instead). It uses one position slot.
-     The engine can't sell part of a position or add to one, so: when a new pick needs more than
-     `free_cash_for_new_buys_eur`, put `SELL VWCE.DE` in the same file (sells run before buys at the open; reason:
-     "funding new picks"), and re-park the leftover cash on a later day. The 60-day max hold also closes it; re-park then.
+   - **Cash parking (engine-managed since 30 Nov 2026).** Spare cash sits in VWCE.DE automatically
+     (`summary.json → parked_eur`, position marked `cash_parking: true`). It doesn't use a slot, and
+     `free_cash_for_new_buys_eur` already includes it: the engine sells as much of it as a new buy needs.
+     So size ideas against equity as normal and never propose BUY/SELL VWCE.DE yourself (it gets rejected).
+     Beating the benchmark now depends only on stock picks, so propose only names you expect to beat VWCE.
    - Proposals that haven't filled yet (not in `summary.json` positions) do **not** use up a slot. If one is
      still valid, repeat it in today's file (proposals expire after 3 days; the engine ignores a buy for a name
      already held).

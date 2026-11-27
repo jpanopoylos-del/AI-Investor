@@ -22,6 +22,7 @@ def proj(tmp_path):
     import re
     txt = re.sub(r"(?m)^starting_cash_eur:.*$", "starting_cash_eur: 1000", rules.read_text())
     txt = re.sub(r"(?m)^min_trade_eur:.*$", "min_trade_eur: 50", txt)
+    txt = re.sub(r"(?m)^cash_parking_symbol:.*$", "cash_parking_symbol: null", txt)   # opt-in per test
     rules.write_text(re.sub(r"(?m)^max_positions:.*$", "max_positions: 5", txt))
     (tmp_path / "proposals" / "inbox").mkdir(parents=True)
     return tmp_path
@@ -267,3 +268,75 @@ def test_quotes_file(proj):
     assert q["pending_buys"][0]["stop_if_filled_now"] == pytest.approx(q["pending_buys"][0]["price"] * 0.95, rel=1e-3)
     assert q["updated_athens"] == "2026-11-03 11:00"
     assert q["live_equity_eur"] == pytest.approx(q["cash_eur"] + pos["value_eur"], abs=0.02)
+
+
+# ---------- cash parking ----------
+def enable_parking(root):
+    import re
+    rules = root / "config" / "rules.yaml"
+    txt = re.sub(r"(?m)^cash_parking_symbol:.*$", "cash_parking_symbol: VWCE.DE", rules.read_text())
+    rules.write_text(re.sub(r"(?m)^cash_parking_from:.*$", "cash_parking_from: 2026-11-01", txt))
+
+
+def test_parking_sweeps_spare_cash_and_skips_slots_and_stops(proj):
+    enable_parking(proj)
+    run(proj, "2026-11-02")
+    e, _ = run(proj, "2026-11-03")
+    p = e.state.positions["VWCE.DE"]
+    eq = summary(proj)["equity_eur"]
+    assert e.state.cash_eur == pytest.approx(0.15 * eq, rel=0.05)      # min cash 10% + buffer 5%
+    assert summary(proj)["open_slots"] == e.rules["max_positions"]       # no slot used
+    assert summary(proj)["free_cash_for_new_buys_eur"] > 0.8 * eq        # parked money counts as free
+    p.stop_price = 1e9                                                   # would trigger for a normal position
+    e.gap_exits(); e.intraday_exits()
+    assert "VWCE.DE" in e.state.positions
+    buys = [l for l in (proj / "data" / "trades.csv").read_text().splitlines() if "cash parking" in l]
+    assert len(buys) == 1
+
+
+def test_parking_is_sold_to_fund_a_buy_and_cash_adds_up(proj):
+    enable_parking(proj)
+    run(proj, "2026-11-02")
+    run(proj, "2026-11-03")
+    propose(proj, "2026-11-04", [{"action": "BUY", "symbol": "SAP.DE", "size_pct": 0.2},
+                                 {"action": "BUY", "symbol": "MSFT", "size_pct": 0.2}])
+    e, _ = run(proj, "2026-11-04")
+    assert {"SAP.DE", "MSFT"} <= set(e.state.positions)
+    assert all(d["status"] == "FILLED" for d in e.decisions)
+    assert e.state.cash_eur >= 0.10 * summary(proj)["equity_eur"] - 1
+    sells = [l for l in (proj / "data" / "trades.csv").read_text().splitlines() if ",SELL," in l]
+    assert sells and all("cash parking" in l for l in sells)
+    s = summary(proj)
+    pos_val = sum(to_eur(p.qty * p.last_price, p.currency, e.fx) for p in e.state.positions.values())
+    assert s["equity_eur"] == pytest.approx(e.state.cash_eur + pos_val, abs=0.02)
+
+
+def test_ai_cannot_trade_the_parking_etf(proj):
+    enable_parking(proj)
+    run(proj, "2026-11-02")
+    propose(proj, "2026-11-03", [{"action": "BUY", "symbol": "VWCE.DE", "size_pct": 0.2},
+                                 {"action": "SELL", "symbol": "VWCE.DE"}])
+    e, _ = run(proj, "2026-11-03")
+    assert all("managed automatically" in d["reason"] for d in e.decisions)
+
+
+def test_parking_not_before_switch_on_date(proj):
+    enable_parking(proj)
+    import re
+    rules = proj / "config" / "rules.yaml"
+    rules.write_text(re.sub(r"(?m)^cash_parking_from:.*$", "cash_parking_from: 2026-11-30", rules.read_text()))
+    run(proj, "2026-11-02")
+    e, _ = run(proj, "2026-11-03")
+    assert "VWCE.DE" not in e.state.positions
+
+
+def test_live_parks_after_eu_open_and_reserves_waiting_us_buys(proj):
+    enable_parking(proj)
+    propose(proj, "2026-11-03", [{"action": "BUY", "symbol": "MSFT", "size_pct": 0.2}])
+    run(proj, "2026-11-02")                                  # nightly already sees tomorrow's proposal
+    e, _ = live(proj, "2026-11-03T08:20:00Z")                # Xetra open, NY not
+    eq = e.state.cash_eur + e.park_value()
+    assert e.state.cash_eur == pytest.approx(0.35 * eq, rel=0.05)       # 10% + 5% + 20% for MSFT
+    e, _ = live(proj, "2026-11-03T15:00:00Z")
+    assert "MSFT" in e.state.positions
+    assert not [l for l in (proj / "data" / "trades.csv").read_text().splitlines() if ",SELL," in l]

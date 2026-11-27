@@ -13,6 +13,14 @@ as each exchange has opened, so fills show up within the hour instead of after
 midnight. The fill price is the same official open, so results are identical;
 the nightly run then does steps 3–4 for the day.
 
+Cash parking (rules: cash_parking_symbol): cash the AI's picks don't use is
+parked in a broad ETF (VWCE.DE, the benchmark fund) so idle cash doesn't drag
+returns. The engine manages it on its own: after the open's fills it parks the
+spare cash (keeping min_cash + buffer + room for proposals still waiting), and
+when a new buy needs money it sells just enough of the parking position first.
+The parking position has no stop/target/time exit, doesn't use a position slot,
+the 20% cap or a daily buy, and the AI can't trade it directly.
+
 Why fill at the next OPEN?  The AI writes its ideas in the morning before
 markets open. Filling at that day's open price is what a real order would
 get. Using an earlier price would be cheating ("look-ahead bias").
@@ -148,6 +156,8 @@ class Engine:
         self.buys_today = self._buys_logged_today()   # live mode may already have bought today
         self.seen: set[str] = set()
         self.discovery_log: list[str] = []        # every ticker the AI mentioned (proposals + watchlist)
+        self.park_px_col = "Open"                 # nightly: trades at the open; live: latest price
+        self.waiting_buy_pct = 0.0                # size of BUYs still waiting in the inbox (reserved cash)
 
     def _buys_logged_today(self) -> int:
         path = self.data / "trades.csv"
@@ -157,6 +167,89 @@ class Engine:
             return sum(1 for r in csv.DictReader(f)
                        if r.get("date") == self.today.isoformat() and r.get("side") == "BUY"
                        and r.get("reason") == "AI proposal")
+
+    # ---- cash parking --------------------------------------------------
+    @property
+    def park(self) -> str | None:
+        return (self.rules.get("cash_parking_symbol") or None)
+
+    def is_park(self, symbol: str) -> bool:
+        return bool(self.park) and symbol == self.park
+
+    def n_positions(self) -> int:
+        """Positions that count against max_positions (the parking ETF doesn't)."""
+        return sum(1 for s in self.state.positions if not self.is_park(s))
+
+    def park_value(self, col: str | None = None) -> float:
+        p = self.state.positions.get(self.park) if self.park else None
+        if p is None:
+            return 0.0
+        b = self.bar(p.symbol)
+        px = float(b[col or self.park_px_col]) if b is not None else p.last_price
+        return to_eur(p.qty * px, p.currency, self.fx)
+
+    def unpark(self, need_eur: float) -> float:
+        """Sell enough of the parking ETF to add `need_eur` to cash (after its fee).
+        Sells everything if what would be left is too small to be worth keeping."""
+        r = self.rules
+        p = self.state.positions.get(self.park) if self.park else None
+        b = self.bar(self.park) if p is not None else None
+        if p is None or b is None or need_eur <= 0:
+            return 0.0
+        px = float(b[self.park_px_col])
+        value = to_eur(p.qty * px, p.currency, self.fx)
+        before = self.state.cash_eur
+        sell_val = max(need_eur + fee_eur(need_eur, p.currency, r), r.get("cash_parking_min_eur", 300))
+        if sell_val >= value - r.get("cash_parking_min_eur", 300):
+            self.sell(self.park, px, "cash parking: funds new buys")
+            return self.state.cash_eur - before
+        frac = sell_val / value
+        qty, cost = p.qty * frac, p.cost_eur * frac
+        fee = fee_eur(sell_val, p.currency, r)
+        p.qty -= qty
+        p.cost_eur -= cost
+        self.state.cash_eur += sell_val - fee
+        self.log_trade(self.park, "SELL", qty, px, p.currency, sell_val, fee,
+                       "cash parking: funds new buys", sell_val - fee - cost)
+        return self.state.cash_eur - before
+
+    def sweep_to_park(self) -> None:
+        """Park cash above min_cash + buffer + room for waiting proposals."""
+        r, st = self.rules, self.state
+        if not self.park:
+            return
+        since = r.get("cash_parking_from")
+        if since and self.today < date.fromisoformat(str(since)):
+            return
+        b = self.bar(self.park)
+        if b is None:
+            return
+        ccy = currency_of(self.park) or "EUR"
+        px = float(b[self.park_px_col])
+        equity = st.cash_eur + sum(
+            to_eur(p.qty * (float(self.bar(s)[self.park_px_col]) if self.bar(s) is not None else p.last_price),
+                   p.currency, self.fx) for s, p in st.positions.items())
+        keep = (r["min_cash_pct"] + r.get("cash_parking_buffer_pct", 0.05)
+                + min(self.waiting_buy_pct, 1.0)) * equity
+        excess = st.cash_eur - keep
+        if excess < r.get("cash_parking_min_eur", 300):
+            return
+        invest = excess - fee_eur(excess, ccy, r)
+        fee = fee_eur(invest, ccy, r)
+        qty = invest / to_eur(px, ccy, self.fx)
+        st.cash_eur -= invest + fee
+        p = st.positions.get(self.park)
+        if p is None:
+            st.positions[self.park] = Position(
+                symbol=self.park, currency=ccy, qty=qty, entry_price=px,
+                entry_date=self.today.isoformat(), cost_eur=invest + fee,
+                stop_price=0.0, target_price=0.0, last_price=px,
+                thesis="Cash parking: spare cash held in the benchmark ETF, managed automatically by the engine.")
+        else:
+            p.entry_price = (p.entry_price * p.qty + px * qty) / (p.qty + qty)
+            p.qty += qty
+            p.cost_eur += invest + fee
+        self.log_trade(self.park, "BUY", qty, px, ccy, invest, fee, "cash parking")
 
     # ---- logging -------------------------------------------------------
     def log_trade(self, symbol, side, qty, px, ccy, value_eur, fee, reason, pnl=None):
@@ -263,6 +356,8 @@ class Engine:
                 elif not eligible_today(created, self.today, ccy) or (ready and not ready(p, ccy)):
                     pending = True                      # wait for tomorrow's open
                     p["_wait"] = True
+                    if p["action"] == "BUY" and not self.is_park(p["symbol"]):
+                        self.waiting_buy_pct += float(p.get("size_pct") or self.rules["max_position_pct"])
                     continue
                 else:
                     props.append(p)
@@ -306,6 +401,10 @@ class Engine:
         others = [p for p in props if p["action"] not in ("BUY", "SELL")]
         for p in others:
             self.decide(p, "REJECTED", "action must be BUY or SELL")
+        for p in [p for p in sells + buys if self.is_park(p["symbol"])]:
+            self.decide(p, "REJECTED", "cash parking is managed automatically by the engine")
+        sells = [p for p in sells if not self.is_park(p["symbol"])]
+        buys = [p for p in buys if not self.is_park(p["symbol"])]
 
         for p in sells:
             s = p["symbol"]
@@ -330,7 +429,7 @@ class Engine:
                 self.decide(p, "REJECTED", "circuit breaker: drawdown too large"); continue
             if s in self.state.positions:
                 self.decide(p, "REJECTED", "already held"); continue
-            if len(self.state.positions) >= r["max_positions"]:
+            if self.n_positions() >= r["max_positions"]:
                 self.decide(p, "REJECTED", "max positions reached"); continue
             if self.buys_today >= r["max_new_buys_per_day"]:
                 self.decide(p, "REJECTED", "max new buys per day reached"); continue
@@ -349,6 +448,10 @@ class Engine:
 
             want = size * equity_open
             spendable = self.state.cash_eur - r["min_cash_pct"] * equity_open
+            short = want + fee_eur(want, ccy, r) - spendable
+            if short > 0.01 and self.park in self.state.positions:
+                self.unpark(short)
+                spendable = self.state.cash_eur - r["min_cash_pct"] * equity_open
             invest = min(want, spendable - fee_eur(want, ccy, r))
             if invest < r["min_trade_eur"]:
                 self.decide(p, "REJECTED", f"not enough free cash (could invest €{invest:.0f})"); continue
@@ -361,6 +464,8 @@ class Engine:
     # ---- exits ---------------------------------------------------------
     def gap_exits(self):
         for s, p in list(self.state.positions.items()):
+            if self.is_park(s):
+                continue                       # parking ETF has no stop/target
             if p.entry_date > self.today.isoformat():
                 continue                       # catch-up of an older day: not held yet
             b = self.bar(s)
@@ -374,6 +479,8 @@ class Engine:
 
     def intraday_exits(self):
         for s, p in list(self.state.positions.items()):
+            if self.is_park(s):
+                continue                       # no stop/target/time exit for the parking ETF
             if p.entry_date > self.today.isoformat():
                 continue
             b = self.bar(s)
@@ -430,7 +537,7 @@ class Engine:
             return f"already ran for {st.last_run_date}; nothing to do"
 
         start = self.today - timedelta(days=45)
-        base = {r["benchmark_symbol"], FX_SYMBOL, *st.positions.keys()}
+        base = {r["benchmark_symbol"], FX_SYMBOL, *st.positions.keys()} | ({self.park} if self.park else set())
         self.bars = self.provider.history(list(base), start, self.today)
         self.patch_today(base)
         bench = self.bar(r["benchmark_symbol"])
@@ -455,6 +562,7 @@ class Engine:
         self.update_discovered()
         self.gap_exits()
         self.process_proposals(props)
+        self.sweep_to_park()                   # at the open, like the fills above
         self.intraday_exits()
 
         # ---- close: value everything ----
@@ -478,7 +586,7 @@ class Engine:
         append_csv(self.data / "equity.csv", {
             "date": self.today.isoformat(), "cash_eur": round(st.cash_eur, 2),
             "invested_eur": round(invested, 2), "equity_eur": round(equity, 2),
-            "benchmark_eur": round(bench_val, 2), "positions": len(st.positions),
+            "benchmark_eur": round(bench_val, 2), "positions": self.n_positions(),
             "drawdown_pct": round(dd * 100, 2),
         })
         for d in self.decisions:
@@ -503,9 +611,10 @@ class Engine:
         if st.last_run_date and date.fromisoformat(st.last_run_date) >= self.today:
             return f"live: {self.today} already closed by the nightly run"
         start = self.today - timedelta(days=45)
-        base = {r["benchmark_symbol"], FX_SYMBOL, *st.positions.keys()}
+        base = {r["benchmark_symbol"], FX_SYMBOL, *st.positions.keys()} | ({self.park} if self.park else set())
         self.bars = self.provider.history(list(base), start, self.today)
         self.patch_today(base)
+        self.park_px_col = "Close"             # intraday: today's bar "Close" is the latest price
         # Unprocessed past sessions? Filling today first would mix up the books.
         last = date.fromisoformat(st.last_run_date)
         bdf = self.bars.get(r["benchmark_symbol"])
@@ -549,7 +658,7 @@ class Engine:
         cash_before = st.cash_eur
         # gap exits for positions whose market has opened (same rule as the nightly run)
         for s, p in list(st.positions.items()):
-            if not market_open_passed(p.currency, now):
+            if self.is_park(s) or not market_open_passed(p.currency, now):
                 continue
             b = self.bar(s)
             if b is None:
@@ -560,6 +669,8 @@ class Engine:
             elif o >= p.target_price:
                 self.sell(s, o, "take-profit (gapped up at open)")
         self.process_proposals(props)
+        if self.park and market_open_passed(currency_of(self.park) or "EUR", now):
+            self.sweep_to_park()
         for d in self.decisions:
             append_csv(self.data / "decisions.csv", d)
         processed = self.root / "proposals" / "processed"
@@ -591,19 +702,23 @@ class Engine:
                 "value_eur": round(val, 2), "weight_pct": round(val / equity * 100, 1),
                 "stop_price": round(p.stop_price, 4), "target_price": round(p.target_price, 4),
                 "thesis": p.thesis,
+                **({"cash_parking": True} if self.is_park(p.symbol) else {}),
             })
-        free_cash = st.cash_eur - r["min_cash_pct"] * equity
+        parked = sum(to_eur(p.qty * p.last_price, p.currency, self.fx)
+                     for s, p in st.positions.items() if self.is_park(s))
+        free_cash = st.cash_eur + parked - r["min_cash_pct"] * equity   # parking is sold automatically to fund buys
         summary = {
             "as_of": as_of or self.today.isoformat(), "start_date": st.start_date,
             "equity_eur": round(equity, 2), "cash_eur": round(st.cash_eur, 2),
             "free_cash_for_new_buys_eur": round(max(free_cash, 0), 2),
+            "parked_eur": round(parked, 2),
             "return_pct": round((equity / start - 1) * 100, 2),
             "starting_cash_eur": start,
             "benchmark": r["benchmark_symbol"],
             "benchmark_return_pct": round((bench_val / start - 1) * 100, 2),
             "drawdown_from_peak_pct": round(dd * 100, 2),
             "buying_halted": st.halted,
-            "open_slots": r["max_positions"] - len(st.positions),
+            "open_slots": r["max_positions"] - self.n_positions(),
             "positions": positions,
             "todays_decisions": self._decisions_logged_today() or self.decisions,
             "discovery_notes": self.discovery_log,

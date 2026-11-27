@@ -75,8 +75,9 @@ def write_quotes(root: Path, provider, now: datetime) -> dict:
             "pnl_pct": round((price / p.entry_price - 1) * 100, 2),
             "value_eur": round(to_eur(p.qty * price, p.currency, fx), 2),
             "stop_price": round(p.stop_price, 4), "target_price": round(p.target_price, 4),
-            "to_stop_pct": round((p.stop_price / price - 1) * 100, 2),
-            "to_target_pct": round((p.target_price / price - 1) * 100, 2),
+            "to_stop_pct": round((p.stop_price / price - 1) * 100, 2) if p.stop_price else None,
+            "to_target_pct": round((p.target_price / price - 1) * 100, 2) if p.target_price else None,
+            **({"cash_parking": True} if s == rules.get("cash_parking_symbol") else {}),
         })
     pending = []
     seen = set()
