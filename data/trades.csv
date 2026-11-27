@@ -7,3 +7,4 @@ date,symbol,side,qty,price,currency,fx_usd_per_eur,value_eur,fee_eur,pnl_eur,cas
 2026-11-26,BELA.AT,BUY,22.704707,26.4,EUR,1.09721,599.4,1.0,,2964.54,AI proposal
 2026-11-27,AI.PA,BUY,2.646166,189.2,EUR,1.09433,500.65,1.0,,2462.89,AI proposal
 2026-11-27,ANT,BUY,6.44643,84.99,USD,1.09433,500.65,2.25,,1959.98,AI proposal
+2026-11-27,CASH,DEPOSIT,10000.0,1,EUR,1.09433,10000.0,0,,11959.98,"capital added: balance raised by €10,000 to €15,000 start capital (benchmark buys the same €10,000 at VWCE.DE 165.32)"

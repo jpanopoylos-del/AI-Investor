@@ -3,16 +3,16 @@
   "updated_athens": "2026-11-27 19:30",
   "note": "Yahoo prices, usually ~15 min delayed. For display only; the engine trades at the official open/close.",
   "fx_usd_per_eur": 1.09433,
-  "cash_eur": 1959.98,
-  "live_equity_eur": 5067.46,
-  "live_return_pct": 1.35,
+  "cash_eur": 11959.98,
+  "live_equity_eur": 15067.46,
+  "live_return_pct": 0.45,
   "benchmark": {
     "symbol": "VWCE.DE",
     "price": 165.32000732421875,
     "time_athens": "2026-11-27 18:25",
     "live": true,
-    "value_eur": 5114.7,
-    "return_pct": 2.29
+    "value_eur": 15114.7,
+    "return_pct": 0.76
   },
   "positions": [
     {
