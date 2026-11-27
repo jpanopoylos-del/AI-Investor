@@ -8,10 +8,10 @@ starting_cash_eur: 5000            # €1,000 at start + €4,000 deposited on 2
 start_date: null              # set automatically on the first run
 
 # Position sizing
-max_positions: 8              # never hold more than 8 stocks/ETFs at once
+max_positions: 10             # raised from 8 on 27 Nov 2026 (user): tiny legacy positions were blocking slots
 max_position_pct: 0.20        # one position ≤ 20% of portfolio value
 min_cash_pct: 0.10            # always keep ≥ 10% in cash
-min_trade_eur: 50             # smaller trades aren't worth the fee
+min_trade_eur: 200            # raised from 50 on 27 Nov 2026 (user): keeps the €1 fee ≤0.5%
 max_new_buys_per_day: 2
 
 # Exits (as % from the fill price). The AI may choose within these bounds.
