@@ -133,7 +133,7 @@ else{
     ["Ahead of benchmark", (alpha>=0?"+":"")+alpha.toFixed(2)+" pts", alpha>=0?'<span class="up">beating it</span>':'<span class="down">trailing it</span>'],
     ["Cash"+(S.parked_eur?" + parked":""), eur(S.cash_eur+(S.parked_eur||0)), '<span class="muted">'+(()=>{const n=S.positions.filter(p=>!p.cash_parking).length;return n+(n===1?' position · ':' positions · ')})()+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
   ].concat(D.picks ? [["Stock picks only", sign(D.picks.return_pct),
-      '<span class="muted">'+(D.picks.pnl_eur>=0?"+":"")+eur(D.picks.pnl_eur)+' on '+eur(D.picks.invested_eur,0)+' · VWCE same days '+pct(D.picks.bench_same_days_pct)+'</span>']] : [])
+      '<span class="muted">'+(D.picks.pnl_eur>=0?"+":"")+eur(D.picks.pnl_eur)+' on '+eur(D.picks.invested_eur,0)+(D.picks.bench_same_days_pct==null?'':' · VWCE same days '+pct(D.picks.bench_same_days_pct))+'</span>']] : [])
   .map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
   $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +

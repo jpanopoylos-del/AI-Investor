@@ -49,13 +49,12 @@ def picks_stats(root: Path) -> dict | None:
     quotes = json.loads(q_path.read_text()) if q_path.exists() else None
     qpos = {p["symbol"]: p for p in (quotes or {}).get("positions", [])}
     bench = [(r["date"], float(r["close"])) for r in _csv(root / "data" / "benchmark_history.csv")]
-    if not bench:
-        return None
-    bench_now = float((quotes or {}).get("benchmark", {}).get("price") or bench[-1][1])
+    bench_now = float((quotes or {}).get("benchmark", {}).get("price") or (bench[-1][1] if bench else 0))
+    has_bench = bool(bench) and bench_now > 0
 
     def b_before(d):        # benchmark close of the last session before day d
         xs = [c for dd, c in bench if dd < d]
-        return xs[-1] if xs else bench[0][1]
+        return xs[-1] if xs else (bench[0][1] if bench else 1.0)
 
     def b_on(d):            # benchmark close on day d (or the last one before)
         xs = [c for dd, c in bench if dd <= d]
@@ -75,7 +74,8 @@ def picks_stats(root: Path) -> dict | None:
         elif open_buys.get(t["symbol"]):
             b = open_buys[t["symbol"]].pop(0)
             pnl += float(t["pnl_eur"] or 0)
-            bench_pnl += b["_amt"] * (b_on(t["date"]) / b_before(b["date"]) - 1)
+            if has_bench:
+                bench_pnl += b["_amt"] * (b_on(t["date"]) / b_before(b["date"]) - 1)
     for sym, buys in open_buys.items():
         pos = pf.get("positions", {}).get(sym)
         for b in buys:
@@ -87,13 +87,14 @@ def picks_stats(root: Path) -> dict | None:
                 px = pos["last_price"] * pos["qty"]
                 val = px if pos["currency"] == "EUR" else px / (pf.get("last_fx") or 1.0)
             pnl += val - pos["cost_eur"]
-            bench_pnl += b["_amt"] * (bench_now / b_before(b["date"]) - 1)
+            if has_bench:
+                bench_pnl += b["_amt"] * (bench_now / b_before(b["date"]) - 1)
     if invested <= 0:
         return None
     return {"picks": n, "invested_eur": round(invested, 2), "pnl_eur": round(pnl, 2),
             "return_pct": round(pnl / invested * 100, 2),
-            "bench_same_days_eur": round(bench_pnl, 2),
-            "bench_same_days_pct": round(bench_pnl / invested * 100, 2)}
+            "bench_same_days_eur": round(bench_pnl, 2) if has_bench else None,
+            "bench_same_days_pct": round(bench_pnl / invested * 100, 2) if has_bench else None}
 
 
 def build_dashboard(root: Path) -> Path:
@@ -254,7 +255,7 @@ else{
     ["Ahead of benchmark", (alpha>=0?"+":"")+alpha.toFixed(2)+" pts", alpha>=0?'<span class="up">beating it</span>':'<span class="down">trailing it</span>'],
     ["Cash"+(S.parked_eur?" + parked":""), eur(S.cash_eur+(S.parked_eur||0)), '<span class="muted">'+(()=>{const n=S.positions.filter(p=>!p.cash_parking).length;return n+(n===1?' position · ':' positions · ')})()+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
   ].concat(D.picks ? [["Stock picks only", sign(D.picks.return_pct),
-      '<span class="muted">'+(D.picks.pnl_eur>=0?"+":"")+eur(D.picks.pnl_eur)+' on '+eur(D.picks.invested_eur,0)+' · VWCE same days '+pct(D.picks.bench_same_days_pct)+'</span>']] : [])
+      '<span class="muted">'+(D.picks.pnl_eur>=0?"+":"")+eur(D.picks.pnl_eur)+' on '+eur(D.picks.invested_eur,0)+(D.picks.bench_same_days_pct==null?'':' · VWCE same days '+pct(D.picks.bench_same_days_pct))+'</span>']] : [])
   .map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
   $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
