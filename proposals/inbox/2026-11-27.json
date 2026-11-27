@@ -1,0 +1,25 @@
+{
+  "created_at": "2026-11-27T05:10:16Z",
+  "market_view": "Regime turned DEFENSIVE: VWCE.DE (-1.6%) and SXR8.DE (-0.1%) are both now below SMA200, breadth 41.4% above SMA200 / 29% above SMA50, median 20d -5.2%, and EQQQ.DE -6.8% below trend as the AI/tech sell-off continues. US markets reopen today for a half session after Thanksgiving, so no US ideas. Rule: at most 1 new buy at <=10%; with ~59% cash I add one low-volatility non-tech leader (Air Liquide) and keep all five holdings - no position-specific news found that breaks a thesis. IPO radar: no sizeable US/EU IPO verified for the next weeks; ANT (Anthropic, listed 19 Nov) reaches 10 sessions on 3 Dec and has its own user-requested task on 4 Dec - the analyst is not neutral on Anthropic, which makes Claude.",
+  "proposals": [
+    {
+      "action": "BUY",
+      "symbol": "AI.PA",
+      "size_pct": 0.10,
+      "stop_loss_pct": 0.05,
+      "take_profit_pct": 0.11,
+      "confidence": 0.55,
+      "thesis": "Air Liquide is one of the few leaders in a weak tape: screen close 188.46, +8.2% 20d, +11.6% vs SMA200, 2.5% off its 52w high, RSI 62, lowest volatility in the shortlist (15.8%). Q3 showed +3% comparable growth and management is confident of +100bp margin in 2026; Kepler raised its target to EUR 223 (buy) on 19 Nov. Adds French industrial gases - non-tech, non-bank diversification; FY results not until around late February.",
+      "risks": "Santander cut to neutral (target EUR 207.50) on 17 Nov; a broad risk-off leg could drag even defensives; a close back below SMA50 (~EUR 177) would break the trend.",
+      "sources": [
+        "https://www.ideal-investisseur.fr/en/stock-news/air-liquide-shares-less-than-2-from-their-record-high-kepler-raises-its-target/29765.html",
+        "https://www.airliquide.com/investors/events-calendar"
+      ]
+    }
+  ],
+  "watchlist": ["BRK-B", "V", "MA", "OR.PA", "KO", "SAN.PA", "ENI.MI", "SAP.DE", "SPCX", "BSP", "ARXS", "CBRS"],
+  "sources": [
+    "https://cyprus-mail.com/2026/11/05/bank-of-cyprus-raises-2026-profitability-target-after-e383m-nine-month-profit",
+    "https://legacy.newsquawk.com/blog/5142-eu-market-open-a-quiet-session-ahead-with-us-away-for-thanksgiving-holiday"
+  ]
+}
