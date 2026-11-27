@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-11-27T17:30:58Z",
-  "updated_athens": "2026-11-27 19:30",
+  "updated_at": "2026-11-27T22:55:24Z",
+  "updated_athens": "2026-11-28 00:55",
   "note": "Yahoo prices, usually ~15 min delayed. For display only; the engine trades at the official open/close.",
-  "fx_usd_per_eur": 1.09433,
+  "fx_usd_per_eur": 1.09385,
   "cash_eur": 11959.98,
-  "live_equity_eur": 15067.46,
-  "live_return_pct": 0.45,
+  "live_equity_eur": 15061.75,
+  "live_return_pct": 0.41,
   "benchmark": {
     "symbol": "VWCE.DE",
     "price": 165.32000732421875,
@@ -48,17 +48,17 @@
     {
       "symbol": "PG",
       "currency": "USD",
-      "price": 173.19,
-      "time_athens": "2026-11-27 19:30",
+      "price": 173.08,
+      "time_athens": "2026-11-27 19:45",
       "live": true,
       "entry_price": 173.26,
       "entry_date": "2026-11-25",
-      "pnl_pct": -0.04,
-      "value_eur": 601.94,
+      "pnl_pct": -0.1,
+      "value_eur": 601.82,
       "stop_price": 164.597,
       "target_price": 194.0512,
-      "to_stop_pct": -4.96,
-      "to_target_pct": 12.05
+      "to_stop_pct": -4.9,
+      "to_target_pct": 12.12
     },
     {
       "symbol": "BOCHGR.AT",
@@ -108,17 +108,17 @@
     {
       "symbol": "ANT",
       "currency": "USD",
-      "price": 92.73,
-      "time_athens": "2026-11-27 19:30",
+      "price": 91.74,
+      "time_athens": "2026-11-27 19:55",
       "live": true,
       "entry_price": 84.99,
       "entry_date": "2026-11-27",
-      "pnl_pct": 9.11,
-      "value_eur": 546.25,
+      "pnl_pct": 7.94,
+      "value_eur": 540.65,
       "stop_price": 74.7912,
       "target_price": 110.487,
-      "to_stop_pct": -19.35,
-      "to_target_pct": 19.15
+      "to_stop_pct": -18.47,
+      "to_target_pct": 20.43
     }
   ],
   "pending_buys": []

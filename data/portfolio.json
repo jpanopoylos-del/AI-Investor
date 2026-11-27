@@ -1,7 +1,7 @@
 {
   "cash_eur": 11959.981519400852,
   "start_date": "2026-11-23",
-  "last_run_date": "2026-11-26",
+  "last_run_date": "2026-11-27",
   "positions": {
     "MUV2.DE": {
       "symbol": "MUV2.DE",
@@ -13,7 +13,7 @@
       "stop_price": 537.54,
       "target_price": 664.6999999999999,
       "thesis": "Munich Re raised its 2026 profit target to EUR 6.6bn with Q3 results (9M net result EUR 5.7bn); the screen shows a rare leader in a weak tape: +4.2% 20d vs median -5.4%, 11.7% above SMA200, 2.5% off its 52w high, RSI 58.5, low 25.6% volatility. Rate-sensitive, non-tech earnings and EUR exposure suit a defensive regime; next results are not due until late February.",
-      "last_price": 589.2000122070312
+      "last_price": 585.4000244140625
     },
     "IBE.MC": {
       "symbol": "IBE.MC",
@@ -25,7 +25,7 @@
       "stop_price": 21.650500869750974,
       "target_price": 25.296901016235353,
       "thesis": "Iberdrola grew 9M-2026 net profit ~10% to EUR 5.8bn on record investment and raised its 2026 outlook (targets a record year); screen shows a steady leader: +3.9% 20d, +13.7% 60d, 11.2% above SMA200, 3.7% off its 52w high, RSI 58, very low 16.4% volatility. Adds utilities/Spain exposure; FY results not due until late February.",
-      "last_price": 22.979999542236328
+      "last_price": 23.209999084472656
     },
     "PG": {
       "symbol": "PG",
@@ -37,7 +37,7 @@
       "stop_price": 164.59699478149415,
       "target_price": 194.05119384765626,
       "thesis": "P&G's Nov 19 Investor Day laid out a ~USD 10bn productivity/savings plan; Citi raised its target to USD 190 and TD Cowen set USD 180 (vs 169.60 close). Screen: +6.1% 20d, +18% 60d, 12.8% above SMA200, 2% off its 52w high, RSI 61, low 19.1% volatility. Defensive US staple diversifies away from EU financials; next earnings late January.",
-      "last_price": 173.22999572753906
+      "last_price": 172.86000061035156
     },
     "BOCHGR.AT": {
       "symbol": "BOCHGR.AT",
@@ -49,7 +49,7 @@
       "stop_price": 9.671999645233154,
       "target_price": 11.959999561309813,
       "thesis": "Bank of Cyprus reported 9M-2026 profit of EUR 383m (+9%), RoTE 18.9%, and raised 2026 RoTE guidance to high-teens with a 70% payout plus up to 20% top-up. Screen 11-24: close 10.69, 2.7% off 52w high, +8.0% vs SMA200, above SMA50, RSI 51, volatility 26%, ADV EUR 6.2m. Adds Greek/Cypriot financials; next results with FY in February.",
-      "last_price": 10.569999694824219
+      "last_price": 10.600000381469727
     },
     "BELA.AT": {
       "symbol": "BELA.AT",
@@ -61,7 +61,7 @@
       "stop_price": 25.07999963760376,
       "target_price": 29.303999576568607,
       "thesis": "Jumbo's Jan-Oct 2026 group sales rose 6.7% with October +13% (best month of the year, Greece +9% YTD); the EUR 1.00 special dividend already went ex on 16 Nov, so no distribution drop ahead. Screen 11-24: close 26.84, +9.6% vs SMA200, above SMA50, RSI 46, 6% off 52w high, very low 17% volatility, ADV EUR 8.6m. Defensive consumer name that diversifies away from banks.",
-      "last_price": 26.760000228881836
+      "last_price": 26.739999771118164
     },
     "AI.PA": {
       "symbol": "AI.PA",
@@ -73,7 +73,7 @@
       "stop_price": 179.73999710083007,
       "target_price": 210.01199661254884,
       "thesis": "Air Liquide is one of the few leaders in a weak tape: screen close 188.46, +8.2% 20d, +11.6% vs SMA200, 2.5% off its 52w high, RSI 62, lowest volatility in the shortlist (15.8%). Q3 showed +3% comparable growth and management is confident of +100bp margin in 2026; Kepler raised its target to EUR 223 (buy) on 19 Nov. Adds French industrial gases - non-tech, non-bank diversification; FY results not until around late February.",
-      "last_price": 189.1999969482422
+      "last_price": 191.9600067138672
     },
     "ANT": {
       "symbol": "ANT",
@@ -85,12 +85,12 @@
       "stop_price": 74.79119812011719,
       "target_price": 110.4869972229004,
       "thesis": "Requested by the user (repeat of the 26 Nov user request, rejected only by the daily buy cap). Anthropic listed on Nasdaq on 19 Nov 2026 at USD 83 and is one of the most actively traded US stocks; it has given back most of its first-day pop. Small, wide-stop position in a leading AI company ahead of possible Nasdaq-100 entry; analyst initiations are expected when the quiet period ends (~29 Dec). Disclosure: Anthropic makes Claude, so the analyst is not neutral.",
-      "last_price": 84.98999786376953
+      "last_price": 91.87999725341797
     }
   },
   "benchmark_qty": 91.42690646089875,
-  "benchmark_last": 163.5,
-  "peak_equity": 15014.917568345594,
+  "benchmark_last": 165.4600067138672,
+  "peak_equity": 15062.348747977081,
   "halted": false,
-  "last_fx": 1.0973334312438965
+  "last_fx": 1.0938525199890137
 }
