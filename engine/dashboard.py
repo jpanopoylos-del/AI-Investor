@@ -32,8 +32,73 @@ def _latest_proposal(root: Path) -> dict | None:
         return None
 
 
+def picks_stats(root: Path) -> dict | None:
+    """Return of the AI's stock picks alone (cash and the cash-parking ETF left out),
+    and what the same euros would have made in the benchmark over the same days.
+    Uses live prices from quotes.json when present, else the last close.
+    Benchmark entry = its close the session before each buy (≈ the open the pick filled at)."""
+    import yaml
+    trades = _csv(root / "data" / "trades.csv")
+    pf_path = root / "data" / "portfolio.json"
+    if not trades or not pf_path.exists():
+        return None
+    rules = yaml.safe_load((root / "config" / "rules.yaml").read_text())
+    park = rules.get("cash_parking_symbol")
+    pf = json.loads(pf_path.read_text())
+    q_path = root / "data" / "quotes.json"
+    quotes = json.loads(q_path.read_text()) if q_path.exists() else None
+    qpos = {p["symbol"]: p for p in (quotes or {}).get("positions", [])}
+    bench = [(r["date"], float(r["close"])) for r in _csv(root / "data" / "benchmark_history.csv")]
+    if not bench:
+        return None
+    bench_now = float((quotes or {}).get("benchmark", {}).get("price") or bench[-1][1])
+
+    def b_before(d):        # benchmark close of the last session before day d
+        xs = [c for dd, c in bench if dd < d]
+        return xs[-1] if xs else bench[0][1]
+
+    def b_on(d):            # benchmark close on day d (or the last one before)
+        xs = [c for dd, c in bench if dd <= d]
+        return xs[-1] if xs else bench_now
+
+    picks = [t for t in trades if t["symbol"] not in ("CASH", park)
+             and t["side"] in ("BUY", "SELL") and "cash parking" not in t.get("reason", "")]
+    open_buys: dict[str, list[dict]] = {}
+    invested = pnl = bench_pnl = 0.0
+    n = 0
+    for t in picks:
+        if t["side"] == "BUY":
+            amt = float(t["value_eur"]) + float(t["fee_eur"] or 0)
+            invested += amt
+            n += 1
+            open_buys.setdefault(t["symbol"], []).append({**t, "_amt": amt})
+        elif open_buys.get(t["symbol"]):
+            b = open_buys[t["symbol"]].pop(0)
+            pnl += float(t["pnl_eur"] or 0)
+            bench_pnl += b["_amt"] * (b_on(t["date"]) / b_before(b["date"]) - 1)
+    for sym, buys in open_buys.items():
+        pos = pf.get("positions", {}).get(sym)
+        for b in buys:
+            if pos is None:
+                continue
+            if sym in qpos:
+                val = float(qpos[sym]["value_eur"])
+            else:
+                px = pos["last_price"] * pos["qty"]
+                val = px if pos["currency"] == "EUR" else px / (pf.get("last_fx") or 1.0)
+            pnl += val - pos["cost_eur"]
+            bench_pnl += b["_amt"] * (bench_now / b_before(b["date"]) - 1)
+    if invested <= 0:
+        return None
+    return {"picks": n, "invested_eur": round(invested, 2), "pnl_eur": round(pnl, 2),
+            "return_pct": round(pnl / invested * 100, 2),
+            "bench_same_days_eur": round(bench_pnl, 2),
+            "bench_same_days_pct": round(bench_pnl / invested * 100, 2)}
+
+
 def build_dashboard(root: Path) -> Path:
     data = {
+        "picks": picks_stats(root),
         "summary": json.loads((root / "data" / "summary.json").read_text())
         if (root / "data" / "summary.json").exists() else None,
         "equity": _csv(root / "data" / "equity.csv"),
@@ -82,7 +147,8 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2
 .muted{color:var(--ink3);font-size:13px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
 .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media(min-width:640px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tiles>.tile:nth-child(5){grid-column:1/-1}
+@media(min-width:640px){.tiles{grid-template-columns:repeat(5,1fr)}.tiles>.tile:nth-child(5){grid-column:auto}}
 .tile .k{font-size:12px;color:var(--ink2)}
 .tile .v{font-size:24px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
 .tile .d{font-size:13px;font-variant-numeric:tabular-nums;margin-top:2px}
@@ -187,7 +253,9 @@ else{
     ["Benchmark ("+S.benchmark+")", eur(Q ? Q.benchmark.value_eur : START*(1+bret/100)), sign(bret)],
     ["Ahead of benchmark", (alpha>=0?"+":"")+alpha.toFixed(2)+" pts", alpha>=0?'<span class="up">beating it</span>':'<span class="down">trailing it</span>'],
     ["Cash"+(S.parked_eur?" + parked":""), eur(S.cash_eur+(S.parked_eur||0)), '<span class="muted">'+(()=>{const n=S.positions.filter(p=>!p.cash_parking).length;return n+(n===1?' position · ':' positions · ')})()+S.open_slots+' slots free'+(S.buying_halted?' · <b class="down">buying halted</b>':'')+'</span>'],
-  ].map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  ].concat(D.picks ? [["Stock picks only", sign(D.picks.return_pct),
+      '<span class="muted">'+(D.picks.pnl_eur>=0?"+":"")+eur(D.picks.pnl_eur)+' on '+eur(D.picks.invested_eur,0)+' · VWCE same days '+pct(D.picks.bench_same_days_pct)+'</span>']] : [])
+  .map(([k,v,d])=>`<div class="card tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
   $("positions").innerHTML = S.positions.length ? `<tr><th>Symbol</th><th class="r">Shares</th><th class="r">Bought / Now</th><th class="r">Value</th><th class="r">P&amp;L</th><th class="r">Stop / Target</th><th>Since</th></tr>` +
     S.positions.map(p=>{const q=QP[p.symbol]; const now=q?q.price:p.last_close, val=q?q.value_eur:p.value_eur, pl=q?q.pnl_pct:p.pnl_pct;

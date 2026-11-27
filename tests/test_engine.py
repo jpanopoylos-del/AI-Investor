@@ -340,3 +340,16 @@ def test_live_parks_after_eu_open_and_reserves_waiting_us_buys(proj):
     e, _ = live(proj, "2026-11-03T15:00:00Z")
     assert "MSFT" in e.state.positions
     assert not [l for l in (proj / "data" / "trades.csv").read_text().splitlines() if ",SELL," in l]
+
+
+def test_picks_stats_ignore_cash_and_parking(proj):
+    from engine.dashboard import picks_stats
+    enable_parking(proj)
+    propose(proj, "2026-11-03", [{"action": "BUY", "symbol": "SAP.DE", "size_pct": 0.2}])
+    run(proj, "2026-11-02")
+    e, _ = run(proj, "2026-11-03")
+    st = picks_stats(proj)
+    pos = e.state.positions["SAP.DE"]
+    assert st["picks"] == 1 and st["invested_eur"] == pytest.approx(pos.cost_eur, abs=0.02)
+    val = pos.qty * pos.last_price
+    assert st["pnl_eur"] == pytest.approx(val - pos.cost_eur, abs=0.02)

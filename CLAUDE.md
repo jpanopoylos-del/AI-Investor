@@ -126,6 +126,8 @@ Push to **main** directly (no branch, no PR) — the evening engine run reads `m
 
 Finish with a short summary (this is what the user sees on their phone):
 portfolio value vs benchmark, each proposal in one line, and anything notable about open positions.
+Also give the stock-picks-only return vs VWCE over the same days (cash and parking left out):
+`python -c "from engine.dashboard import picks_stats;from pathlib import Path;print(picks_stats(Path('.')))"`.
 
 ## Never
 
